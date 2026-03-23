@@ -1,11 +1,106 @@
+// ── AUTH ────────────────────────────────────────────────────
+function getToken() { return localStorage.getItem('token') }
+function getEmail() { return localStorage.getItem('userEmail') }
+
+function authHeaders() {
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer ' + getToken()
+  }
+}
+
+function apiFetch(url, options = {}) {
+  if (!options.headers) options.headers = {}
+  options.headers['Authorization'] = 'Bearer ' + getToken()
+  if (!options.headers['Content-Type'] && options.method !== 'DELETE') {
+    options.headers['Content-Type'] = 'application/json'
+  }
+  return fetch(url, options).then(r => {
+    if (r.status === 401 || r.status === 403) {
+      doLogout()
+      throw new Error('Sessão expirada. Faça login novamente.')
+    }
+    return r
+  })
+}
+
+function doLogin() {
+  const email    = document.getElementById('login-email').value.trim()
+  const password = document.getElementById('login-password').value
+  const errEl    = document.getElementById('login-error')
+  errEl.textContent = ''
+
+  if (!email || !password) { errEl.textContent = 'Preencha email e senha'; return }
+
+  fetch('/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+  })
+    .then(r => {
+      if (!r.ok) throw new Error('Email ou senha inválidos')
+      return r.json()
+    })
+    .then(data => {
+      // Salva o token temporariamente para chamar /auth/me
+      localStorage.setItem('token', data.token)
+
+      // Verifica o role antes de liberar o painel
+      return fetch('/auth/me', {
+        headers: { 'Authorization': 'Bearer ' + data.token }
+      })
+    })
+    .then(r => r.json())
+    .then(user => {
+      if (user.role !== 'ADMIN') {
+        localStorage.removeItem('token')
+        document.getElementById('login-error').textContent =
+          'Acesso restrito a administradores.'
+        return
+      }
+      localStorage.setItem('userEmail', user.email)
+      showApp()
+    })
+    .catch(err => {
+      localStorage.removeItem('token')
+      document.getElementById('login-error').textContent = err.message
+    })
+}
+
+function doLogout() {
+  localStorage.removeItem('token')
+  localStorage.removeItem('userEmail')
+  document.getElementById('app').style.display = 'none'
+  document.getElementById('login-screen').style.display = 'flex'
+  document.getElementById('login-password').value = ''
+  document.getElementById('login-error').textContent = ''
+}
+
+function showApp() {
+  document.getElementById('login-screen').style.display = 'none'
+  document.getElementById('app').style.display = 'flex'
+  document.getElementById('logged-user').textContent = getEmail()
+  fetchCategories().then(() => loadUsers())
+}
+
+// Ao carregar a página, verifica se já tem token
+window.addEventListener('load', () => {
+  document.getElementById('login-password').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin()
+  })
+  if (getToken()) {
+    showApp()
+  }
+})
+
 // ── CACHE DE CATEGORIAS ─────────────────────────────────────
-// Guarda as categorias em memória para não precisar buscar toda hora
 let allCategories = []
 
 function fetchCategories() {
-  return fetch('/categories')
+  return apiFetch('/categories')
     .then(r => r.json())
     .then(cats => { allCategories = cats; return cats })
+    .catch(() => [])
 }
 
 // ── NAVEGAÇÃO ──────────────────────────────────────────────
@@ -37,7 +132,7 @@ function navigate(name, btn) {
 // ── USUÁRIOS ────────────────────────────────────────────────
 function loadUsers() {
   showLoading('users-loading')
-  fetch('/users')
+  apiFetch('/users')
     .then(r => r.json())
     .then(users => {
       hideLoading('users-loading')
@@ -50,10 +145,13 @@ function loadUsers() {
         return
       }
       users.forEach(user => {
+        const roleTag = user.role === 'ADMIN'
+          ? '<span class="tag tag-admin">ADMIN</span>'
+          : '<span class="tag tag-user">USER</span>'
         const item = document.createElement('li')
         item.innerHTML = `
           <div class="item-info">
-            <div class="item-name">${user.name}</div>
+            <div class="item-name">${user.name} ${roleTag}</div>
             <div class="item-sub">${user.email} · ${user.phone}</div>
           </div>
           <div style="display:flex;align-items:center;gap:8px">
@@ -66,13 +164,13 @@ function loadUsers() {
         lista.appendChild(item)
       })
     })
-    .catch(() => { hideLoading('users-loading'); toast('Erro ao carregar usuários', 'error') })
+    .catch(err => { hideLoading('users-loading'); toast(err.message, 'error') })
 }
 
 function findById() {
   const id = document.getElementById('input-id').value
   if (!id) return
-  fetch('/users/' + id)
+  apiFetch('/users/' + id)
     .then(r => {
       if (!r.ok) throw new Error('Usuário não encontrado')
       setRequestInfo('GET', '/users/' + id, 200)
@@ -96,15 +194,19 @@ function createUser() {
     name:     document.getElementById('create-name').value.trim(),
     email:    document.getElementById('create-email').value.trim(),
     phone:    document.getElementById('create-phone').value.trim(),
-    password: document.getElementById('create-password').value
+    password: document.getElementById('create-password').value,
+    role:     document.getElementById('create-role').value
   }
   if (!body.name || !body.email) { toast('Preencha nome e email', 'error'); return }
-  fetch('/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-    .then(r => { if (!r.ok) throw new Error('Erro ao criar usuário'); setRequestInfo('POST', '/users', 201); return r.json() })
-    .then(user => {
+
+  apiFetch('/auth/register', { method: 'POST', body: JSON.stringify(body) })
+    .then(r => {
+      if (r.status === 400) throw new Error('Email já cadastrado')
+      if (!r.ok) throw new Error('Erro ao criar usuário')
+      setRequestInfo('POST', '/auth/register', 200)
       closeModal('modal-create')
       clearForm('create-name', 'create-email', 'create-phone', 'create-password')
-      toast(`Usuário "${user.name}" criado!`, 'success')
+      toast(`Usuário "${body.name}" criado!`, 'success')
       loadUsers()
     })
     .catch(err => toast(err.message, 'error'))
@@ -126,7 +228,7 @@ function updateUser() {
     email: document.getElementById('edit-email').value.trim(),
     phone: document.getElementById('edit-phone').value.trim()
   }
-  fetch('/users/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+  apiFetch('/users/' + id, { method: 'PUT', body: JSON.stringify(body) })
     .then(r => { if (!r.ok) throw new Error('Erro ao atualizar'); setRequestInfo('PUT', '/users/' + id, 200); return r.json() })
     .then(user => { closeModal('modal-edit'); toast(`"${user.name}" atualizado!`, 'success'); loadUsers() })
     .catch(err => toast(err.message, 'error'))
@@ -140,7 +242,7 @@ function openDelete(id, name) {
 
 function confirmDelete() {
   const id = document.getElementById('delete-id').value
-  fetch('/users/' + id, { method: 'DELETE' })
+  apiFetch('/users/' + id, { method: 'DELETE' })
     .then(r => {
       if (r.status === 404) throw new Error('Usuário não encontrado')
       if (r.status === 400) throw new Error('Usuário possui pedidos e não pode ser deletado')
@@ -156,7 +258,7 @@ function confirmDelete() {
 // ── PEDIDOS ─────────────────────────────────────────────────
 function loadOrders() {
   showLoading('orders-loading')
-  fetch('/orders')
+  apiFetch('/orders')
     .then(r => r.json())
     .then(orders => {
       hideLoading('orders-loading')
@@ -164,7 +266,6 @@ function loadOrders() {
       setRequestInfo('GET', '/orders', 200)
       const list = document.getElementById('orders-list')
       list.innerHTML = ''
-
       const statusMap = {
         PAID:            { cls: 'tag-paid',      label: 'Pago' },
         WAITING_PAYMENT: { cls: 'tag-waiting',   label: 'Aguardando' },
@@ -172,11 +273,9 @@ function loadOrders() {
         DELIVERED:       { cls: 'tag-delivered', label: 'Entregue' },
         CANCELED:        { cls: 'tag-canceled',  label: 'Cancelado' }
       }
-
       orders.forEach(order => {
         const status  = statusMap[order.orderStatus] || { cls: 'tag-waiting', label: order.orderStatus }
         const payment = order.payment ? 'Pago' : 'Pendente'
-
         const itemsHtml = order.items && order.items.length > 0
           ? order.items.map(i => `
               <div class="order-item">
@@ -184,7 +283,6 @@ function loadOrders() {
                 <span>R$ ${i.subTotal.toFixed(2)}</span>
               </div>`).join('')
           : '<div class="order-item"><span style="color:var(--muted)">Sem itens</span></div>'
-
         const item = document.createElement('li')
         item.style.cssText = 'flex-direction:column;align-items:flex-start;gap:10px'
         item.innerHTML = `
@@ -203,7 +301,7 @@ function loadOrders() {
         list.appendChild(item)
       })
     })
-    .catch(() => { hideLoading('orders-loading'); toast('Erro ao carregar pedidos', 'error') })
+    .catch(err => { hideLoading('orders-loading'); toast(err.message, 'error') })
 }
 
 function openEditOrder(id, currentStatus) {
@@ -216,7 +314,7 @@ function openEditOrder(id, currentStatus) {
 function updateOrder() {
   const id     = document.getElementById('edit-order-id').value
   const status = document.getElementById('edit-order-status').value
-  fetch('/orders/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderStatus: status }) })
+  apiFetch('/orders/' + id, { method: 'PUT', body: JSON.stringify({ orderStatus: status }) })
     .then(r => { if (!r.ok) throw new Error('Erro ao atualizar pedido'); return r.json() })
     .then(() => { closeModal('modal-edit-order'); toast('Status atualizado!', 'success'); loadOrders() })
     .catch(err => toast(err.message, 'error'))
@@ -230,7 +328,7 @@ function openDeleteOrder(id) {
 
 function confirmDeleteOrder() {
   const id = document.getElementById('delete-order-id').value
-  fetch('/orders/' + id, { method: 'DELETE' })
+  apiFetch('/orders/' + id, { method: 'DELETE' })
     .then(r => { if (!r.ok) throw new Error('Erro ao deletar pedido'); closeModal('modal-delete-order'); toast(`Pedido #${id} deletado!`, 'success'); loadOrders() })
     .catch(err => { closeModal('modal-delete-order'); toast(err.message, 'error') })
 }
@@ -238,8 +336,7 @@ function confirmDeleteOrder() {
 // ── PRODUTOS ────────────────────────────────────────────────
 function loadProducts() {
   showLoading('products-loading')
-  // Busca categorias e produtos ao mesmo tempo
-  Promise.all([fetchCategories(), fetch('/products').then(r => r.json())])
+  Promise.all([fetchCategories(), apiFetch('/products').then(r => r.json())])
     .then(([, products]) => {
       hideLoading('products-loading')
       document.getElementById('products-count').textContent = products.length
@@ -266,10 +363,9 @@ function loadProducts() {
           </div>`
         list.appendChild(item)
       })
-      // Salva produtos para usar no openEditProduct
       window._products = products
     })
-    .catch(() => { hideLoading('products-loading'); toast('Erro ao carregar produtos', 'error') })
+    .catch(err => { hideLoading('products-loading'); toast(err.message, 'error') })
 }
 
 function renderCheckboxes(containerId, allCats, selectedIds) {
@@ -295,13 +391,8 @@ function renderCheckboxes(containerId, allCats, selectedIds) {
 function toggleCheckbox(input, labelId) {
   const label = document.getElementById(labelId)
   const dot   = label.querySelector('.checkbox-dot')
-  if (input.checked) {
-    label.classList.add('checked')
-    dot.textContent = '✓'
-  } else {
-    label.classList.remove('checked')
-    dot.textContent = ''
-  }
+  if (input.checked) { label.classList.add('checked'); dot.textContent = '✓' }
+  else               { label.classList.remove('checked'); dot.textContent = '' }
 }
 
 function getCheckedCategories(containerId) {
@@ -325,13 +416,9 @@ function createProduct() {
     categories
   }
   if (!body.name || !body.price) { toast('Preencha nome e preço', 'error'); return }
-  fetch('/products', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+  apiFetch('/products', { method: 'POST', body: JSON.stringify(body) })
     .then(r => { if (!r.ok) throw new Error('Erro ao criar produto'); return r.json() })
-    .then(product => {
-      closeModal('modal-create-product')
-      toast(`Produto "${product.name}" criado!`, 'success')
-      loadProducts()
-    })
+    .then(product => { closeModal('modal-create-product'); toast(`Produto "${product.name}" criado!`, 'success'); loadProducts() })
     .catch(err => toast(err.message, 'error'))
 }
 
@@ -359,7 +446,7 @@ function updateProduct() {
     imgUrl:      document.getElementById('edit-product-imgurl').value.trim(),
     categories
   }
-  fetch('/products/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+  apiFetch('/products/' + id, { method: 'PUT', body: JSON.stringify(body) })
     .then(r => { if (!r.ok) throw new Error('Erro ao atualizar'); return r.json() })
     .then(product => { closeModal('modal-edit-product'); toast(`"${product.name}" atualizado!`, 'success'); loadProducts() })
     .catch(err => toast(err.message, 'error'))
@@ -373,7 +460,7 @@ function openDeleteProduct(id, name) {
 
 function confirmDeleteProduct() {
   const id = document.getElementById('delete-product-id').value
-  fetch('/products/' + id, { method: 'DELETE' })
+  apiFetch('/products/' + id, { method: 'DELETE' })
     .then(r => {
       if (r.status === 404) throw new Error('Produto não encontrado')
       if (r.status === 400) throw new Error('Produto possui pedidos e não pode ser deletado')
@@ -409,20 +496,15 @@ function loadCategories() {
         list.appendChild(item)
       })
     })
-    .catch(() => { hideLoading('categories-loading'); toast('Erro ao carregar categorias', 'error') })
+    .catch(err => { hideLoading('categories-loading'); toast(err.message, 'error') })
 }
 
 function createCategory() {
   const name = document.getElementById('create-category-name').value.trim()
   if (!name) { toast('Preencha o nome', 'error'); return }
-  fetch('/categories', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) })
+  apiFetch('/categories', { method: 'POST', body: JSON.stringify({ name }) })
     .then(r => { if (!r.ok) throw new Error('Erro ao criar categoria'); return r.json() })
-    .then(cat => {
-      closeModal('modal-create-category')
-      clearForm('create-category-name')
-      toast(`Categoria "${cat.name}" criada!`, 'success')
-      loadCategories()
-    })
+    .then(cat => { closeModal('modal-create-category'); clearForm('create-category-name'); toast(`Categoria "${cat.name}" criada!`, 'success'); loadCategories() })
     .catch(err => toast(err.message, 'error'))
 }
 
@@ -437,7 +519,7 @@ function updateCategory() {
   const id   = document.getElementById('edit-category-id').value
   const name = document.getElementById('edit-category-name').value.trim()
   if (!name) { toast('Preencha o nome', 'error'); return }
-  fetch('/categories/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) })
+  apiFetch('/categories/' + id, { method: 'PUT', body: JSON.stringify({ name }) })
     .then(r => { if (!r.ok) throw new Error('Erro ao atualizar categoria'); return r.json() })
     .then(cat => { closeModal('modal-edit-category'); toast(`Categoria renomeada para "${cat.name}"!`, 'success'); loadCategories() })
     .catch(err => toast(err.message, 'error'))
@@ -451,7 +533,7 @@ function openDeleteCategory(id, name) {
 
 function confirmDeleteCategory() {
   const id = document.getElementById('delete-category-id').value
-  fetch('/categories/' + id, { method: 'DELETE' })
+  apiFetch('/categories/' + id, { method: 'DELETE' })
     .then(r => { if (!r.ok) throw new Error('Erro ao deletar categoria'); closeModal('modal-delete-category'); toast('Categoria deletada!', 'success'); loadCategories() })
     .catch(err => { closeModal('modal-delete-category'); toast(err.message, 'error') })
 }
@@ -487,10 +569,3 @@ function toast(msg, type = 'info') {
 document.querySelectorAll('.modal-overlay').forEach(overlay => {
   overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open') })
 })
-
-// Ajusta o botão de novo produto para abrir o modal com checkboxes
-document.querySelector('[onclick="openModal(\'modal-create-product\')"]')
-  ?.setAttribute('onclick', 'openCreateProductModal()')
-
-// Carrega ao iniciar
-fetchCategories().then(() => loadUsers())

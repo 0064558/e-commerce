@@ -7,7 +7,6 @@ import com.rodrigo.demo.services.exceptions.ResourceNotFoundException;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -68,10 +67,10 @@ public class UserService {
         return obj.orElseThrow(() -> new ResourceNotFoundException(id));
     }
 
-    public User insert(User obj) {
+    /*public User insert(User obj) {
         repository.save(obj);
         return obj;
-    }
+    }*/
 
     public void delete(Long id) {
         try {
