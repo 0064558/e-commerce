@@ -202,6 +202,8 @@ Senha: 123456
 Role: USER
 ```
 
+- Ao rodar o projeto uma vez no ambiente de desenvolvimento, esses dados são inseridos automaticamente, quando isso for feito e for rodar a aplicação novamente, é necessário que comente o conteúdo de `DevConfig`, para que os dados no banco não sejam duplicados e não dê erro na aplicação.
+
 ---
 
 ## 📡 API Endpoints
@@ -354,7 +356,6 @@ O token JWT expira em 2 horas. Faça login novamente para obter um novo token.
 - O painel administrativo é simples, mas funcional, e pode ser melhorado com frameworks frontend (React, Angular, etc) para uma experiência mais rica.
 - A segurança é uma prioridade, com criptografia de senhas e controle de acesso rigoroso baseado em roles.
 - O código é organizado em camadas, seguindo boas práticas de desenvolvimento e arquitetura limpa, facilitando manutenção e escalabilidade.
-- Ao rodar o projeto uma vez no ambiente de desenvolvimento, os dados são inseridos automaticamente, quando isso for feito e for rodar a aplicação novamente, é necessário que comente o conteúdo de `DevConfig`, para que os dados no banco não sejam duplicados e não dê erro na aplicação.
 
 ## 📄 Licença
 
