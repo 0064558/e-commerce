@@ -160,8 +160,8 @@ Category (n) ────────────────── (n) Product
 
 1. **Clone o repositório**
 ```bash
-git clone https://github.com/seu-usuario/shop-admin-api.git
-cd shop-admin-api
+git clone https://github.com/0064558/workshop-springboot-4.git
+cd workshop-springboot-4
 ```
 
 2. **Configure o banco (PostgreSQL local)**
@@ -169,7 +169,7 @@ cd shop-admin-api
 # Crie o banco de dados
 createdb demo
 # Atualize as credenciais em src/main/resources/application-dev.properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/shopdb
+spring.datasource.url=jdbc:postgresql://localhost:5432/demo
 spring.datasource.username=seu_usuario
 spring.datasource.password=sua_senha
 ```
