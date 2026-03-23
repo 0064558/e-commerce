@@ -202,7 +202,7 @@ Senha: 123456
 Role: USER
 ```
 
-- Ao rodar o projeto uma vez no ambiente de desenvolvimento, esses dados são inseridos automaticamente, quando isso for feito e for rodar a aplicação novamente, é necessário que comente o conteúdo de `DevConfig`, para que os dados no banco não sejam duplicados e não dê erro na aplicação.
+Ao rodar o projeto uma vez no ambiente de desenvolvimento, esses dados são inseridos automaticamente, quando isso for feito e for rodar a aplicação novamente, é necessário que comente o conteúdo de `DevConfig`, para que os dados no banco não sejam duplicados e não dê erro na aplicação.
 
 ---
 
