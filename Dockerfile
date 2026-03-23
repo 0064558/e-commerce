@@ -1,16 +1,20 @@
-FROM ubuntu:latest AS build
+# ===== STAGE 1: BUILD =====
+FROM maven:3.9.9-eclipse-temurin-21 AS build
 
-RUN apt-get update
-RUN apt-get install openjdk-21-jdk -y
+WORKDIR /app
+
 COPY . .
 
-RUN apt-get install maven -y
-RUN mvn clean install
+RUN mvn clean package -DskipTests
 
+
+# ===== STAGE 2: RUN =====
 FROM eclipse-temurin:21-jdk-jammy
 
-EXPOSE 8080
+WORKDIR /app
 
-COPY --from=build target/workshop-springboot-jpa-0.0.1-SNAPSHOT.jar app.jar
+COPY --from=build /app/target/workshop-springboot-jpa-0.0.1-SNAPSHOT.jar app.jar
+
+EXPOSE 8080
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
