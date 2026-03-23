@@ -15,20 +15,20 @@ import java.util.Arrays;
 
 /**
  * CONFIGURATION - Configuração de Perfil de Teste (Database Seeding)
- *
+ * <p>
  * Esta classe configura dados iniciais para o perfil "test".
  * É uma forma de popular o banco de dados com dados de teste.
- *
+ * <p>
  * Anotações:
  * - @Configuration: marca a classe como classe de configuração do Spring
  * - @Profile("test"): esta configuração só é ativada quando o perfil "test" está ativo
- *   Definido em application.properties: spring.profiles.active=test
- *
+ * Definido em application.properties: spring.profiles.active=test
+ * <p>
  * CommandLineRunner:
  * - Interface funcional que executa código após a aplicação iniciar
  * - O método run() é executado automaticamente pelo Spring Boot
  * - Útil para inicialização de dados, warmup de cache, etc.
- *
+ * <p>
  * Fluxo de execução:
  * 1. Spring Boot inicia a aplicação
  * 2. Detecta perfil ativo = "test"
@@ -37,8 +37,8 @@ import java.util.Arrays;
  * 5. Dados são inseridos no banco H2 em memória
  */
 @Configuration
-@Profile("test")
-public class TestConfig implements CommandLineRunner {
+@Profile("dev")
+public class DevConfig implements CommandLineRunner {
 
     /**
      * Repository injetado para persistir os dados de teste.
@@ -68,7 +68,7 @@ public class TestConfig implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
 
-        Category cat1 = new Category(null, "Electronics");
+        /*Category cat1 = new Category(null, "Electronics");
         Category cat2 = new Category(null, "Books");
         Category cat3 = new Category(null, "Computers");
         Category cat4 = new Category(null, "Fashion");
@@ -118,7 +118,8 @@ public class TestConfig implements CommandLineRunner {
 
 
         // saveAll: persiste múltiplas entidades de uma vez
-        // Mais eficiente que múltiplos save() individuais
+        // Mais eficiente que múltiplos save() individuais*/
 
     }
 }
+
