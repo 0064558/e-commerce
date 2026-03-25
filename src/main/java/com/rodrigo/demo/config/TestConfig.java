@@ -68,7 +68,7 @@ public class TestConfig implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
 
-        Category cat1 = new Category(null, "Electronics");
+        /*Category cat1 = new Category(null, "Electronics");
         Category cat2 = new Category(null, "Books");
         Category cat3 = new Category(null, "Computers");
         Category cat4 = new Category(null, "Fashion");
@@ -118,7 +118,7 @@ public class TestConfig implements CommandLineRunner {
 
 
         // saveAll: persiste múltiplas entidades de uma vez
-        // Mais eficiente que múltiplos save() individuais
+        // Mais eficiente que múltiplos save() individuais*/
 
     }
 }

@@ -16,10 +16,10 @@ import java.util.Optional;
 
 /**
  * SERVICE - Camada de Serviço (Business Logic Layer)
- *
+ * <p>
  * A camada de serviço contém a lógica de negócio da aplicação.
  * Atua como intermediária entre o Controller (Resource) e o Repository.
- *
+ * <p>
  * Responsabilidades:
  * - Implementar regras de negócio
  * - Orquestrar transações
@@ -28,7 +28,7 @@ import java.util.Optional;
  *
  * @Component: registra a classe como bean do Spring (injeção de dependência)
  * Alternativa mais específica: @Service (semanticamente mais clara)
- *
+ * <p>
  * Injeção de Dependência:
  * - @Autowired injeta o ProductRepository automaticamente
  * - O Spring gerencia o ciclo de vida do bean
@@ -59,10 +59,10 @@ public class ProductService {
      * @param id Identificador do usuário
      * @return O usuário encontrado
      * @throws NoSuchElementException se o usuário não existir
-     *
-     * NOTA: obj.get() lança NoSuchElementException se vazio.
-     * Em produção, considere lançar uma exceção customizada como
-     * ResourceNotFoundException ou usar orElseThrow().
+     *                                <p>
+     *                                NOTA: obj.get() lança NoSuchElementException se vazio.
+     *                                Em produção, considere lançar uma exceção customizada como
+     *                                ResourceNotFoundException ou usar orElseThrow().
      */
     public Product findById(Long id) {
         Optional<Product> obj = repository.findById(id);
@@ -102,6 +102,9 @@ public class ProductService {
         entity.setDescription(obj.getDescription());
         entity.setPrice(obj.getPrice());
         entity.setImgUrl(obj.getImgUrl());
+        if (obj.getStockQuantity() != null) {
+            entity.setStockQuantity(obj.getStockQuantity());
+        }
         if (obj.getCategories() != null && !obj.getCategories().isEmpty()) {
             entity.getCategories().clear();
             entity.getCategories().addAll(obj.getCategories());

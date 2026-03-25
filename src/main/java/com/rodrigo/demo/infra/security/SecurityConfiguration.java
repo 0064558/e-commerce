@@ -59,6 +59,7 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.PUT, "/products/**", "/categories/**", "/orders/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/products/**", "/categories/**", "/orders/**").hasRole("ADMIN")
                         .requestMatchers("/cart/**").authenticated()
+                        .requestMatchers("/checkout/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exception -> exception

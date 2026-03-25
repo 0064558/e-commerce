@@ -1,6 +1,7 @@
 package com.rodrigo.demo.resources;
 
 import com.rodrigo.demo.entities.Order;
+import com.rodrigo.demo.entities.records.OrderResponseDTO;
 import com.rodrigo.demo.services.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -47,11 +48,12 @@ public class OrderResource {
      * @return ResponseEntity com lista de usuários e status 200 (OK)
      */
     @GetMapping
-    public ResponseEntity<List<Order>> findAll() {
-        // Delega a busca para a camada de serviço
+    public ResponseEntity<List<OrderResponseDTO>> findAll() {
         List<Order> list = service.findAll();
-        // Retorna resposta HTTP 200 com a lista no corpo
-        return ResponseEntity.ok().body(list);
+        List<OrderResponseDTO> dtoList = list.stream()
+                .map(OrderResponseDTO::from)
+                .toList();
+        return ResponseEntity.ok(dtoList);
     }
 
     /**
@@ -63,11 +65,11 @@ public class OrderResource {
      * @PathVariable: vincula o parâmetro da URL ao parâmetro do método
      */
     @GetMapping(value = "/{id}")
-    public ResponseEntity<Order> findById(@PathVariable Long id) {
+    public ResponseEntity<OrderResponseDTO> findById(@PathVariable Long id) {
         // Busca o usuário pelo ID
         Order obj = service.findById(id);
         // Retorna resposta HTTP 200 com o usuário no corpo
-        return ResponseEntity.ok().body(obj);
+        return ResponseEntity.ok(OrderResponseDTO.from(obj));
     }
 
     @DeleteMapping(value = "/{id}")
@@ -77,9 +79,9 @@ public class OrderResource {
     }
 
     @PutMapping(value = "/{id}")
-    public ResponseEntity<Order> update(@PathVariable Long id, @RequestBody Order obj) {
+    public ResponseEntity<OrderResponseDTO> update(@PathVariable Long id, @RequestBody Order obj) {
         obj = service.update(id, obj);
-        return ResponseEntity.ok().body(obj);
+        return ResponseEntity.ok(OrderResponseDTO.from(obj));
     }
 
 }

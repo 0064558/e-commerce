@@ -120,6 +120,8 @@ public class DevConfig implements CommandLineRunner {
         // saveAll: persiste múltiplas entidades de uma vez
         // Mais eficiente que múltiplos save() individuais*/
 
+
+
     }
 }
 
