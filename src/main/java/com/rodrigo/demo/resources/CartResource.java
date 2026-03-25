@@ -1,6 +1,7 @@
 package com.rodrigo.demo.resources;
 
 import com.rodrigo.demo.entities.Cart;
+import com.rodrigo.demo.entities.records.CartResponseDTO;
 import com.rodrigo.demo.services.CartService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -15,33 +16,38 @@ public class CartResource {
     private CartService cartService;
 
     @GetMapping
-    public ResponseEntity<Cart> getCart(Authentication auth) {
-        return ResponseEntity.ok(cartService.getCart(auth.getName()));
+    public ResponseEntity<CartResponseDTO> getCart(Authentication auth) {
+        Cart cart = cartService.getCart(auth.getName());
+        return ResponseEntity.ok(CartResponseDTO.from(cart));
     }
 
     @PostMapping("/items")
-    public ResponseEntity<Cart> addItem(Authentication auth,
-                                        @RequestParam Long productId,
-                                        @RequestParam Integer quantity) {
-        return ResponseEntity.ok(cartService.addItem(auth.getName(), productId, quantity));
+    public ResponseEntity<CartResponseDTO> addItem(Authentication auth,
+                                                   @RequestParam Long productId,
+                                                   @RequestParam Integer quantity) {
+        Cart cart = cartService.addItem(auth.getName(), productId, quantity);
+        return ResponseEntity.ok(CartResponseDTO.from(cart));
     }
 
     @PutMapping("/items/{productId}")
-    public ResponseEntity<Cart> updateItem(Authentication auth,
-                                           @PathVariable Long productId,
-                                           @RequestParam Integer quantity) {
-        return ResponseEntity.ok(cartService.updateQuantity(auth.getName(), productId, quantity));
+    public ResponseEntity<CartResponseDTO> updateItem(Authentication auth,
+                                                      @PathVariable Long productId,
+                                                      @RequestParam Integer quantity) {
+        Cart cart = cartService.updateQuantity(auth.getName(), productId, quantity);
+        return ResponseEntity.ok(CartResponseDTO.from(cart));
     }
 
     @DeleteMapping("/items/{productId}")
-    public ResponseEntity<Cart> removeItem(Authentication auth,
-                                           @PathVariable Long productId) {
-        return ResponseEntity.ok(cartService.removeItem(auth.getName(), productId));
+    public ResponseEntity<CartResponseDTO> removeItem(Authentication auth,
+                                                      @PathVariable Long productId) {
+        Cart cart = cartService.removeItem(auth.getName(), productId);
+        return ResponseEntity.ok(CartResponseDTO.from(cart));
     }
 
     @DeleteMapping
-    public ResponseEntity<Void> clearCart(Authentication auth) {
+    public ResponseEntity<CartResponseDTO> clearCart(Authentication auth) {
         cartService.clearCart(auth.getName());
-        return ResponseEntity.noContent().build();
+        Cart cart = cartService.getCart(auth.getName());
+        return ResponseEntity.ok(CartResponseDTO.from(cart));
     }
 }

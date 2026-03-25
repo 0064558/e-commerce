@@ -21,7 +21,7 @@ public class Cart implements Serializable {
     @JoinColumn(name = "user_id", unique = true)
     private User user;
 
-    @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "id.cart", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<CartItem> items = new HashSet<>();
 
     @Column(name = "created_at")
@@ -73,6 +73,10 @@ public class Cart implements Serializable {
 
     public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Double getTotal() {
+        return items.stream().mapToDouble(CartItem::getSubTotal).sum();
     }
 
     @Override

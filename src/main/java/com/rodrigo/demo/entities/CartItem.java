@@ -4,6 +4,7 @@ import com.rodrigo.demo.entities.pk.CartItemPK;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 @Entity
 @Table(name = "cart_items")
@@ -13,31 +14,22 @@ public class CartItem implements Serializable {
     @EmbeddedId
     private CartItemPK id = new CartItemPK();
 
-
-    @ManyToOne
-    @JoinColumn(name = "cart_id")
-    private Cart cart;
-
-    @ManyToOne
-    @JoinColumn(name = "product_id")
-    private Product product;
-
     private Integer quantity;
 
-    public Product getProduct() {
-        return product;
-    }
-
-    public void setProduct(Product product) {
-        this.product = product;
-    }
-
     public Cart getCart() {
-        return cart;
+        return id.getCart();
     }
 
     public void setCart(Cart cart) {
-        this.cart = cart;
+        id.setCart(cart);
+    }
+
+    public Product getProduct() {
+        return id.getProduct();
+    }
+
+    public void setProduct(Product product) {
+        id.setProduct(product);
     }
 
     public CartItemPK getId() {
@@ -57,6 +49,18 @@ public class CartItem implements Serializable {
     }
 
     public double getSubTotal() {
-        return product.getPrice() * quantity;
+        return id.getProduct().getPrice() * quantity;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        CartItem cartItem = (CartItem) o;
+        return Objects.equals(id, cartItem.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(id);
     }
 }

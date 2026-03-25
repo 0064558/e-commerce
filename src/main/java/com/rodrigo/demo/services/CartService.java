@@ -14,14 +14,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.Optional;
 
 @Service
 public class CartService {
 
-    @Autowired private CartRepository cartRepository;
-    @Autowired private CartItemRepository cartItemRepository;
-    @Autowired private ProductRepository productRepository;
-    @Autowired private UserRepository userRepository;
+    @Autowired
+    private CartRepository cartRepository;
+    @Autowired
+    private CartItemRepository cartItemRepository;
+    @Autowired
+    private ProductRepository productRepository;
+    @Autowired
+    private UserRepository userRepository;
 
     public Cart getOrCreateCart(String email) {
         User user = (User) userRepository.findByEmail(email);
@@ -43,16 +48,16 @@ public class CartService {
                 .orElseThrow(() -> new ResourceNotFoundException(productId));
 
         CartItemPK pk = new CartItemPK(cart, product);
-        cartItemRepository.findByCartIdAndProductId(pk).ifPresentOrElse(
-                item -> item.setQuantity(item.getQuantity() + quantity),
-                () -> {
-                    CartItem item = new CartItem();
-                    item.getId().setCart(cart);
-                    item.getId().setProduct(product);
-                    item.setQuantity(quantity);
-                    cart.getItems().add(item);
-                }
-        );
+        Optional<CartItem> existingItem = cartItemRepository.findById(pk);
+
+        if (existingItem.isPresent()) {
+            existingItem.get().setQuantity(existingItem.get().getQuantity() + quantity);
+        } else {
+            CartItem newItem = new CartItem();
+            newItem.setId(new CartItemPK(cart, product));
+            newItem.setQuantity(quantity);
+            cart.getItems().add(newItem);
+        }
 
         cart.setUpdatedAt(Instant.now());
         return cartRepository.save(cart);
@@ -60,7 +65,12 @@ public class CartService {
 
     public Cart removeItem(String email, Long productId) {
         Cart cart = getOrCreateCart(email);
-        cart.getItems().removeIf(i -> i.getProduct().getId().equals(productId));
+        boolean removed = cart.getItems().removeIf(
+                i -> i.getProduct().getId().equals(productId)
+        );
+        if (!removed) {
+            throw new ResourceNotFoundException(productId);
+        }
         cart.setUpdatedAt(Instant.now());
         return cartRepository.save(cart);
     }
