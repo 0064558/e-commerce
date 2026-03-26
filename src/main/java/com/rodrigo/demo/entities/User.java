@@ -58,6 +58,9 @@ public class User implements Serializable, UserDetails {
     @JsonIgnore
     private List<Order> orders = new ArrayList<>();
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Address> addres = new ArrayList<>();
+
 
     // Construtor padrão - OBRIGATÓRIO para JPA
     // O Hibernate precisa para instanciar via reflection
@@ -169,6 +172,10 @@ public class User implements Serializable, UserDetails {
 
     public List<Order> getOrders() {
         return orders;
+    }
+
+    public List<Address> getAdresses() {
+        return addres;
     }
 
     // ==================== EQUALS E HASHCODE ====================
