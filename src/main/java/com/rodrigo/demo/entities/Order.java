@@ -33,6 +33,10 @@ public class Order implements Serializable {
     @OneToOne(mappedBy =  "order", cascade = CascadeType.ALL)
     private Payment payment;
 
+    @ManyToOne
+    @JoinColumn(name = "address_id")
+    private Address address;
+
     public Order() {
     }
 
@@ -87,6 +91,14 @@ public class Order implements Serializable {
 
     public void setPayment(Payment payment) {
         this.payment = payment;
+    }
+
+    public Address getAddress() {
+        return address;
+    }
+
+    public void setAddress(Address address) {
+        this.address = address;
     }
 
     @Override

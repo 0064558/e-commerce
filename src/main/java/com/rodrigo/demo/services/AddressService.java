@@ -98,7 +98,7 @@ public class AddressService {
         // Deleta primeiro
         addressRepository.delete(address);
 
-        // 🔥 FORÇA sincronização com banco
+        // FORÇA sincronização com banco
         addressRepository.flush();
 
         if (wasDefault) {

@@ -1,12 +1,14 @@
 package com.rodrigo.demo.resources;
 
 import com.rodrigo.demo.entities.Order;
+import com.rodrigo.demo.entities.records.CheckoutRequestDTO;
 import com.rodrigo.demo.entities.records.OrderResponseDTO;
 import com.rodrigo.demo.services.CheckoutService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -18,8 +20,15 @@ public class CheckoutResource {
     private CheckoutService checkoutService;
 
     @PostMapping
-    public ResponseEntity<OrderResponseDTO> checkout(Authentication auth) {
-        Order order = checkoutService.checkout(auth.getName());
+    public ResponseEntity<OrderResponseDTO> checkout(
+            Authentication auth,
+            @RequestBody CheckoutRequestDTO request
+    ) {
+        Order order = checkoutService.checkout(
+                auth.getName(),
+                request.addressId()
+        );
+
         return ResponseEntity.ok(OrderResponseDTO.from(order));
     }
 }

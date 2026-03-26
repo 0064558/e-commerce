@@ -14,8 +14,10 @@ public record OrderResponseDTO(
         String clientName,
         List<OrderItemDTO> items,
         Double total,
-        Instant paymentMoment
+        Instant paymentMoment,
+        AddressResponseDTO address
 ) {
+
     public record OrderItemDTO(
             Long productId,
             String productName,
@@ -43,7 +45,8 @@ public record OrderResponseDTO(
                 order.getClient().getName(),
                 order.getItems().stream().map(OrderItemDTO::from).toList(),
                 order.getTotal(),
-                order.getPayment() != null ? order.getPayment().getMoment() : null
+                order.getPayment() != null ? order.getPayment().getMoment() : null,
+                order.getAddress() != null ? AddressResponseDTO.from(order.getAddress()) : null
         );
     }
 }

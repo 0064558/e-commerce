@@ -12,28 +12,50 @@ import java.time.Instant;
 
 @Service
 public class CheckoutService {
-    @Autowired private CartService cartService;
-    @Autowired private OrderRepository orderRepository;
-    @Autowired private ProductRepository productRepository;
+
+    @Autowired
+    private CartService cartService;
+
+    @Autowired
+    private OrderRepository orderRepository;
+
+    @Autowired
+    private ProductRepository productRepository;
+
+    @Autowired
+    private AddressRepository addressRepository; // ✅ faltava ;
 
     @Transactional
-    public Order checkout(String email) {
+    public Order checkout(String email, Long addressId) {
+
         // Busca o carrinho do usuário
         Cart cart = cartService.getOrCreateCart(email);
 
-        // Verificar se o carrinho está vazio
-        if(cart.getItems().isEmpty()) {
+        // Carrinho vazio
+        if (cart.getItems().isEmpty()) {
             throw new IllegalStateException("O carrinho está vazio!");
         }
 
-        // Valida estoque de cada item
+        // Valida estoque
         for (CartItem cartItem : cart.getItems()) {
             Product product = cartItem.getProduct();
+
             if (product.getStockQuantity() < cartItem.getQuantity()) {
-                throw new IllegalStateException("Estoque insuficiente para o produto: " + product.getName()
-                        + ". Disponível: " + product.getStockQuantity()
-                        + ", Necessário: " + cartItem.getQuantity());
+                throw new IllegalStateException(
+                        "Estoque insuficiente para o produto: " + product.getName()
+                                + ". Disponível: " + product.getStockQuantity()
+                                + ", Necessário: " + cartItem.getQuantity()
+                );
             }
+        }
+
+        // Busca endereço
+        Address address = addressRepository.findById(addressId)
+                .orElseThrow(() -> new ResourceNotFoundException(addressId));
+
+        // Segurança (endereço pertence ao usuário?)
+        if (!address.getUser().getEmail().equals(email)) {
+            throw new RuntimeException("Endereço não pertence ao usuário");
         }
 
         // Criar pedido
@@ -42,7 +64,10 @@ public class CheckoutService {
         order.setMoment(Instant.now());
         order.setOrderStatus(OrderStatus.WAITING_PAYMENT);
 
-        // Adicionar itens do carrinho ao pedido
+        // ASSOCIA O ENDEREÇO (ESSENCIAL)
+        order.setAddress(address);
+
+        // Adicionar itens
         for (CartItem cartItem : cart.getItems()) {
             OrderItem orderItem = new OrderItem(
                     order,
@@ -53,28 +78,29 @@ public class CheckoutService {
             order.getItems().add(orderItem);
         }
 
-        // Salvar pedido
-        orderRepository.save(order);
-
-        // Simula pagamento bem-sucedido e atualiza status do pedido
+        // Criar pagamento (ANTES do save)
         Payment payment = new Payment();
         payment.setMoment(Instant.now());
         payment.setOrder(order);
+
         order.setPayment(payment);
         order.setOrderStatus(OrderStatus.PAID);
-        orderRepository.save(order);
 
-        // Reduzir estoque dos produtos
+        // Salva UMA VEZ (cascade cuida do resto)
+        order = orderRepository.save(order);
+
+        // Atualiza estoque
         for (CartItem cartItem : cart.getItems()) {
             Product product = cartItem.getProduct();
-            product.setStockQuantity(product.getStockQuantity() - cartItem.getQuantity());
+            product.setStockQuantity(
+                    product.getStockQuantity() - cartItem.getQuantity()
+            );
             productRepository.save(product);
         }
 
-        // Limpar carrinho
+        // Limpa carrinho
         cart.getItems().clear();
 
         return order;
-
     }
 }
