@@ -1,379 +1,260 @@
-# 🛍️ Shop Admin API
+# 🛍️ Nexus Store (E-commerce Backend API Spring Boot + Painel Admin + Frontend React)
 
-> Uma API RESTful completa para gerenciamento de e-commerce com autenticação JWT, controle de roles e painel administrativo integrado.
+API REST completa para um **e-commerce** com **Spring Boot**, **Spring Security (JWT)** e **Spring Data JPA**, incluindo um **painel administrativo web** (arquivos estáticos servidos pelo próprio backend) e um **frontend em React/Vite** separado na pasta `frontend/`.
 
-![Java](https://img.shields.io/badge/Java-21-orange?style=flat-square)
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.3-green?style=flat-square)
-![MySQL](https://img.shields.io/badge/MySQL-8.0%2B-blue?style=flat-square)
-![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)
+> Objetivo deste repositório: servir como projeto de portfólio demonstrando autenticação/roles, modelagem JPA com relacionamentos, boas práticas de API REST, configuração por profiles e deploy via Docker.
 
 ---
 
-## 📋 Tabela de Conteúdos
+## ✨ Destaques
 
-- [Sobre o Projeto](#sobre-o-projeto)
-- [Features](#-features)
-- [Tech Stack](#-tech-stack)
-- [Arquitetura](#-arquitetura)
-- [Primeiros Passos](#-primeiros-passos)
-- [API Endpoints](#-api-endpoints)
-- [Autenticação](#-autenticação)
-- [Deploy](#-deploy)
-- [Contribuindo](#-contribuindo)
-
----
-
-## 📖 Sobre o Projeto
-
-**Shop Admin API** é uma API REST robusta construída com **Spring Boot 4** para gerenciar completamente um e-commerce. A aplicação oferece:
-
-✅ **Autenticação JWT** com roles (ADMIN/USER)  
-✅ **Painel administrativo** em tempo real com interface web  
-✅ **Gestão completa** de usuários, produtos, categorias e pedidos  
-✅ **Segurança** com Spring Security e BCrypt  
-✅ **Banco de dados** flexível (H2, MySQL, PostgreSQL)   
+- **Auth JWT** (login por email/senha) + **controle de acesso por roles** (ADMIN/USER)
+- **CRUD** de Usuários, Produtos, Categorias e Pedidos
+- Entidades de e-commerce com relacionamentos (Order, OrderItem, Payment, Cart, Address etc.)
+- **Seed de dados** por profile (classes `DevConfig` e `TestConfig`)
+- **Painel Admin** simples em `/` (HTML/CSS/JS em `src/main/resources/static`)
+- **Frontend React/Vite** em `frontend/` (não é empacotado automaticamente no backend)
+- **CORS liberado** (útil para desenvolvimento e integração com front)
+- **Dockerfile** pronto para build e execução
 
 ---
 
-## ⚡ Features
-
-### 🔐 Autenticação e Autorização
-- Login com email/senha
-- Geração de JWT com expiração configurável
-- Controle de acesso baseado em roles
-- Registro de novos usuários (apenas admin)
-
-### 👥 Gestão de Usuários
-- CRUD completo de usuários
-- Atribuição de roles (ADMIN/USER)
-- Dados criptografados com BCrypt
-- Validação de email único
-
-### 📦 Gestão de Produtos
-- CRUD de produtos com preço e descrição
-- Associação de múltiplas categorias
-- URL de imagem configurável
-- Filtros e listagens
-
-### 📂 Categorias
-- CRUD de categorias
-- Relacionamento many-to-many com produtos
-- Organização hierárquica
-
-### 🛒 Pedidos
-- CRUD de pedidos com status
-- Rastreamento de itens do pedido
-- Cálculo automático de totais
-- Status do pedido (WAITING_PAYMENT, PAID, SHIPPED, DELIVERED, CANCELED)
-
-### 💳 Pagamentos
-- Registro de pagamentos associados a pedidos
-- Rastreamento de datas
-
-### 📊 Painel Administrativo
-- Interface web integrada
-- Dashboard em tempo real
-- Visualização de todas as entidades
-- Operações CRUD direto no painel
-
----
-
-## 🛠 Tech Stack
+## 🧰 Tech Stack
 
 ### Backend
-- **Framework**: Spring Boot 4.0.3
-- **Java**: 21
-- **ORM**: Spring Data JPA + Hibernate
-- **Segurança**: Spring Security + JWT (Auth0)
+- **Java**: 21 (projeto configurado em `pom.xml`)
+- **Spring Boot**: 4.0.3
+- **Spring Web (MVC)**
+- **Spring Data JPA / Hibernate**
+- **Spring Security** (stateless) + **JWT** (`com.auth0:java-jwt`)
 - **Validação**: Jakarta Validation
-- **Criptografia**: BCrypt
 
-### Banco de Dados
-- **Teste**: H2 Database (em memória)
-- **Desenvolvimento**: PostgreSQL
+### Banco de dados (por profile)
+- `test`: **H2 em memória** (console em `/h2-console`)
+- `dev`: **PostgreSQL local** (configurado em `application-dev.properties`)
 
-### Infraestrutura
-- **Build**: Maven
-- **Container**: Docker
-- **Web**: Embedded Tomcat
+> Observação: o `pom.xml` também possui driver **MySQL** em runtime. Se você quiser usar MySQL no `dev`, é só trocar a URL/usuário/senha do profile `dev`.
 
-### Frontend (Painel Admin)
-- HTML5 + CSS3 + JavaScript
-- Fetch API
-- LocalStorage para persistência de token
+### Frontend
+- `src/main/resources/static`: **Painel Admin** (HTML/CSS/JS) servido pelo backend
+- `frontend/`: **Vite + React/TS** (app separado)
 
 ---
 
-## 🏗 Arquitetura
+## 🗂 Estrutura do projeto
 
-### Estrutura de Camadas
+### Backend
 
 ```
 src/main/java/com/rodrigo/demo/
-├── config/              # Configurações (profiles: dev, test, prod)
-├── entities/            # Modelos JPA
-│   ├── pk/              # Chaves primárias compostas
-│   ├── records/         # DTOs imutáveis
-│   ├── enums/           # Enums (OrderStatus, UserRole)
-│   ├── User             
-│   ├── Product
-│   ├── Category
-│   ├── Order
-│   ├── OrderItem
-│   ├── Payment
-│   
-├── repositories/        # Acesso a dados (Spring Data JPA)
-├── services/            # Lógica de negócio
-├── resources/           # Controllers REST
-├── infra/
-│   └── security/        # JWT, BCrypt, Filters
-└── DemoApplication.java # Classe principal
+├── config/                 # Configs e seed de dados por profile
+├── entities/               # Entidades JPA + enums + DTOs (records)
+├── infra/security/         # JWT, filtros, handlers (401/403)
+├── repositories/           # Repositórios Spring Data
+├── resources/              # Controllers REST
+├── services/               # Regras de negócio
+└── DemoApplication.java
 ```
 
-### Modelo de Dados
+### Painel Admin (estático)
 
 ```
-User (1) ──────────────── (n) Order
-  ├─ id                        ├─ id
-  ├─ name                      ├─ moment
-  ├─ email (unique)            ├─ orderStatus
-  ├─ phone                     └─ (1) ──── (1) Payment
-  ├─ password (hashed)
-  └─ role (ADMIN/USER)
+src/main/resources/static/
+├── index.html
+├── css/style.css
+└── js/app.js
+```
 
-Product (n) ────────── (n) OrderItem ────────── (1) Order
+### Frontend (Vite)
 
-Category (n) ────────────────── (n) Product
+```
+frontend/
+└── src/
+    ├── pages/
+    ├── components/
+    └── services/api.ts
 ```
 
 ---
 
-## 🚀 Primeiros Passos
+## 🧩 Funcionalidades (visão de produto)
+
+### 🔐 Autenticação e autorização
+- `POST /auth/login`: autentica e retorna **JWT**
+- `GET /auth/me`: retorna o usuário autenticado
+- `POST /auth/register`: cria um usuário (no código atual está **permitAll**; pode ser travado com ADMIN)
+
+**Roles**:
+- `ADMIN`: acesso total aos endpoints administrativos (ex.: `/users/**`, escrita em `/products`, `/categories`, `/orders`)
+- `USER`: acesso a endpoints autenticados (ex.: carrinho, endereços, checkout; e `GET /orders/me`)
+
+### 🛒 Catálogo
+- Produtos e categorias com endpoints públicos para listagem/busca (GET)
+- Escrita (POST/PUT/DELETE) restrita a ADMIN
+
+### 📦 Pedidos
+- Endpoints administrativos de pedidos restritos a ADMIN
+- Endpoint `GET /orders/me` para o usuário autenticado consultar os próprios pedidos
+
+### 🧾 Painel Admin
+- Uma SPA simples em JavaScript que:
+  - faz login
+  - salva token no `localStorage`
+  - consome a API com `Authorization: Bearer <token>`
+  - exibe e manipula recursos (CRUD básico)
+
+---
+
+## 🔐 Como a segurança funciona (resumo técnico)
+
+- A aplicação é **stateless** (`SessionCreationPolicy.STATELESS`)
+- O filtro `SecurityFilter`:
+  1. lê o header `Authorization`
+  2. valida o JWT
+  3. carrega o usuário pelo email (`UserRepository.findByEmail`)
+  4. seta o `SecurityContext`
+
+- Tratamento de erros:
+  - **401**: `AuthEntryPoint` (retorna JSON: "Token ausente ou inválido")
+  - **403**: `AuthAccessDeniedHandler` (retorna JSON: "Acesso negado")
+
+---
+
+## ⚙️ Configuração por profiles
+
+O profile padrão está em `application.properties`:
+
+- `spring.profiles.active=dev`
+
+### `dev` (PostgreSQL local)
+Arquivo: `src/main/resources/application-dev.properties`
+- `spring.datasource.url=jdbc:postgresql://localhost:5432/demo`
+- `spring.jpa.hibernate.ddl-auto=update`
+
+### `test` (H2 em memória)
+Arquivo: `src/main/resources/application-test.properties`
+- `jdbc:h2:mem:testdb`
+- Console: `http://localhost:8080/h2-console`
+
+---
+
+## 🔑 Variáveis de ambiente
+
+### JWT
+No `application.properties` existe:
+
+- `api.security.token.secret=${JWT_SECRET:my-secret-key}`
+
+Ou seja:
+- se você setar `JWT_SECRET`, ele será usado
+- se não setar, cai no default `my-secret-key`
+
+> Em produção, sempre defina `JWT_SECRET`.
+
+---
+
+## 🚀 Rodando o projeto (desenvolvimento)
 
 ### Pré-requisitos
 - Java 21+
 - Maven 3.8+
-- PostgreSQL 
-- Git
+- PostgreSQL (para profile `dev`) **ou** usar `test` com H2
 
-### Instalação
-
-1. **Clone o repositório**
-```bash
-git clone https://github.com/0064558/workshop-springboot-4.git
-cd workshop-springboot-4
-```
-
-2. **Configure o banco (PostgreSQL local)**
-```bash
-# Crie o banco de dados
-createdb demo
-# Atualize as credenciais em src/main/resources/application-dev.properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/demo
-spring.datasource.username=seu_usuario
-spring.datasource.password=sua_senha
-```
-
-3. **Instale dependências e execute**
-```bash
-# Modo desenvolvimento (PostgreSQL local)
-mvn clean install
-SPRING_PROFILES_ACTIVE=dev mvn spring-boot:run
-
-# Modo teste (H2 em memória)
-SPRING_PROFILES_ACTIVE=test mvn spring-boot:run
-```
-
-4. **Acesse a aplicação**
-- **Painel Admin**: http://localhost:8080
-
-### Primeiras Credenciais (Modo Test)
-Quando a aplicação inicia com perfil `test` ou `dev`, dois usuários são criados automaticamente:
-
-```
-Admin:
-Email: maria@gmail.com
-Senha: 123456
-Role: ADMIN
-
-Usuário:
-Email: alex@gmail.com
-Senha: 123456
-Role: USER
-```
-
-Ao rodar o projeto uma vez no ambiente de desenvolvimento, esses dados são inseridos automaticamente, quando isso for feito e for rodar a aplicação novamente, é necessário que comente o conteúdo de `DevConfig`, para que os dados no banco não sejam duplicados e não dê erro na aplicação.
+### Painel Admin
+Depois de iniciar o backend, o painel fica em:
+- `http://localhost:8080/`
 
 ---
 
-## 📡 API Endpoints
+## 🧪 Dados iniciais (seed)
 
-### 🔑 Autenticação
+Existem duas classes para seed:
+- `DevConfig` (ativa em `@Profile("dev")`)
+- `TestConfig` (ativa em `@Profile("test")`)
 
-```http
-POST /auth/login
-Content-Type: application/json
+Elas têm exemplos de criação de usuário ADMIN/USER e também pedidos/produtos etc.
 
-{
-  "email": "maria@gmail.com",
-  "password": "123456"
-}
-
-Response: 200 OK
-{
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-}
-```
-
-```http
-POST /auth/register
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "name": "Novo Usuário",
-  "email": "novo@email.com",
-  "phone": "11999999999",
-  "password": "senha123",
-  "role": "USER"
-}
-
-Response: 200 OK
-```
-
-### 👥 Usuários (Requer ADMIN)
-
-```http
-GET /users                          # Listar todos
-GET /users/:id                      # Buscar por ID
-PUT /users/:id                      # Atualizar
-DELETE /users/:id                   # Deletar
-
-Authorization: Bearer <token>
-```
-
-### 📦 Produtos (GET público, POST/PUT/DELETE requer ADMIN)
-
-```http
-GET /products                       # Listar (público)
-GET /products/:id                   # Buscar (público)
-POST /products                      # Criar (admin)
-PUT /products/:id                   # Atualizar (admin)
-DELETE /products/:id                # Deletar (admin)
-
-Content-Type: application/json
-{
-  "name": "Macbook Pro",
-  "description": "Laptop poderoso",
-  "price": 1250.00,
-  "imgUrl": "https://..."
-}
-```
-
-### 📂 Categorias (GET público, POST/PUT/DELETE requer ADMIN)
-
-```http
-GET /categories                     # Listar (público)
-GET /categories/:id                 # Buscar (público)
-POST /categories                    # Criar (admin)
-PUT /categories/:id                 # Atualizar (admin)
-DELETE /categories/:id              # Deletar (admin)
-
-Content-Type: application/json
-{
-  "name": "Eletrônicos"
-}
-```
-
-### 🛒 Pedidos (Requer ADMIN)
-
-```http
-GET /orders                         # Listar
-GET /orders/:id                     # Buscar
-PUT /orders/:id                     # Atualizar status
-DELETE /orders/:id                  # Deletar
-
-Authorization: Bearer <token>
-Content-Type: application/json
-{
-  "orderStatus": "PAID"
-}
-```
+> Importante: no estado atual do código, o conteúdo do método `run()` dessas classes está comentado. Se você quiser seed automático, descomente o bloco.
 
 ---
 
-## 🔐 Autenticação
+## 📡 Principais endpoints
 
-### Fluxo JWT
+### Auth
+- `POST /auth/login`
+- `POST /auth/register`
+- `GET /auth/me`
 
-1. **Login** → Envia email/senha → Recebe token JWT
-2. **Requisições** → Inclui `Authorization: Bearer <token>` no header
-3. **Validação** → Servidor valida JWT e autoriza conforme role
-4. **Expiração** → Token expira em 2 horas (configurável)
+### Usuários (ADMIN)
+- `GET /users`
+- `GET /users/{id}`
+- `POST /users` (se existir no controller)
+- `PUT /users/{id}`
+- `DELETE /users/{id}`
 
-### Exemplo de requisição com autenticação
+### Produtos
+- `GET /products` (público)
+- `GET /products/{id}` (público)
+- `POST /products` (ADMIN)
+- `PUT /products/{id}` (ADMIN)
+- `DELETE /products/{id}` (ADMIN)
 
-```bash
-curl -X GET http://localhost:8080/users \
-  -H "Authorization: Bearer eyJhbGc..." \
-  -H "Content-Type: application/json"
-```
+### Categorias
+- `GET /categories` (público)
+- `GET /categories/{id}` (público)
+- `POST /categories` (ADMIN)
+- `PUT /categories/{id}` (ADMIN)
+- `DELETE /categories/{id}` (ADMIN)
 
-### Roles e Permissões
-
-| Endpoint | PUBLIC | USER | ADMIN |
-|----------|--------|------|-------|
-| GET /products | ✅ | ✅ | ✅ |
-| POST /products | ❌ | ❌ | ✅ |
-| GET /users | ❌ | ❌ | ✅ |
-| POST /auth/register | ❌ | ❌ | ✅ |
+### Pedidos
+- `GET /orders/me` (autenticado)
+- `GET /orders/**` (ADMIN)
 
 ---
-## 🐛 Troubleshooting
 
-### "Access denied for user 'root'@'localhost'"
-Verifique as credenciais no banco de dados em `application-dev.properties`:
-```properties
-spring.datasource.username=root
-spring.datasource.password=sua_senha_correta
-```
+## 🐳 Docker
+
+Existe um `Dockerfile` com build multi-stage (Maven → JRE) que:
+- compila o projeto
+- empacota o `.jar`
+- executa com `java -jar`
+
+---
+
+## 🧯 Troubleshooting (problemas comuns)
+
+### 401 com `{"message":"Token ausente ou inválido"}`
+Isso significa que você chamou um endpoint protegido sem:
+- enviar `Authorization: Bearer <token>`
+
+Ou o token:
+- expirou
+- está inválido
+
+### "Encoded password does not look like BCrypt"
+Se você inseriu usuário manualmente no banco com senha em texto puro, o Spring Security vai rejeitar.
+
+✅ Solução: sempre salvar a senha **já com BCrypt**, ou criar usuário pela API (endpoint `/auth/register`).
+
+### Banco no `dev` não conecta
+Se aparecer erro do tipo `Access denied for user...`:
+- confira usuário/senha em `application-dev.properties`
+- confira se o banco `demo` existe
 
 ### "Cannot load driver class: org.h2.Driver"
-Certifique-se que o perfil ativo é `test` e H2 está nas dependências:
-```bash
-SPRING_PROFILES_ACTIVE=test mvn spring-boot:run
-```
+Acontece quando você roda com profile `test` mas o H2 não está no classpath (ou se o build excluiu a dependência).
 
-### "Token inválido" no painel
-O token JWT expira em 2 horas. Faça login novamente para obter um novo token.
-
-
+Neste projeto o H2 está no `pom.xml` como runtime, então isso geralmente indica profile/config incorreto.
 
 ---
 
-# Observações
-- O projeto é modular e pode ser facilmente estendido com novas features (ex: integração com gateways de pagamento, envio de emails, etc).
-- O painel administrativo é simples, mas funcional, e pode ser melhorado com frameworks frontend (React, Angular, etc) para uma experiência mais rica.
-- A segurança é uma prioridade, com criptografia de senhas e controle de acesso rigoroso baseado em roles.
-- O código é organizado em camadas, seguindo boas práticas de desenvolvimento e arquitetura limpa, facilitando manutenção e escalabilidade.
+## 🗺 Roadmap (ideias de evolução)
 
-## 📄 Licença
-
-Este projeto está licenciado sob a licença MIT - veja o arquivo [LICENSE](LICENSE) para detalhes.
-
-
-
----
-
-## 🤝 Contribuindo
-
-Contribuições são bem-vindas! Para contribuir:
-
-1. Faça um Fork do projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/MinhaFeature`)
-3. Commit suas mudanças (`git commit -m 'Adicionar MinhaFeature'`)
-4. Push para a branch (`git push origin feature/MinhaFeature`)
-5. Abra um Pull Request
+- Integrar build do `frontend/` no Maven e servir build pelo backend
+- Documentar API com Swagger/OpenAPI
+- Criar pipeline CI (testes + build de imagem Docker)
+- Melhorar regras de autorização (ex.: `POST /auth/register` apenas ADMIN)
+- Refresh token / logout server-side
 
 ---
 
@@ -382,20 +263,8 @@ Contribuições são bem-vindas! Para contribuir:
 **Rodrigo Alexandre**
 - Email: rodrigo11.vgp@gmail.com
 
-
 ---
 
-## 📞 Suporte
+## 📄 Licença
 
-Encontrou um bug ou tem uma sugestão? Abra uma [Issue](https://github.com/seu-usuario/shop-admin-api/issues).
-
----
-
-<div align="center">
-
-**⭐ Se este projeto foi útil para você, considere dar uma estrela!**
-
-Made with ❤️ by Rodrigo Alexandre
-
-</div>
-
+Este projeto está sob a licença MIT.
