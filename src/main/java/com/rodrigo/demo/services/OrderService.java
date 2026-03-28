@@ -22,6 +22,10 @@ public class OrderService {
         return repository.findAll();
     }
 
+    public List<Order> findByClientEmail(String email) {
+        return repository.findByClientEmail(email);
+    }
+
     public Order findById(Long id) {
         Optional<Order> obj = repository.findById(id);
         return obj.orElseThrow(() -> new ResourceNotFoundException(id));

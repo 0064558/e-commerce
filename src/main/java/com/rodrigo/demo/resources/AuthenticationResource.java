@@ -40,7 +40,7 @@ public class AuthenticationResource {
     }
 
     @PostMapping("/register")
-    @PreAuthorize("hasRole('ADMIN')")
+    //@PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity register(@RequestBody @Valid RegisterDTO data) {
         if(this.repository.findByEmail(data.email()) != null) {
             return ResponseEntity.badRequest().body("E-mail already in use");

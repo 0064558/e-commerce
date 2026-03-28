@@ -15,18 +15,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-/*
-
-A configuração de segurança é feita usando Spring Security, que é um framework poderoso e altamente personalizável para autenticação e controle de acesso em aplicações Java.
-
-@Configuration: Indica que esta classe é uma classe de configuração do Spring. Ela define beans e configurações para a aplicação.
-
-@EnableWebSecurity: Ativa a configuração de segurança web do Spring Security. Isso permite que você configure regras de segurança para as rotas da sua aplicação.
-
-Nesta classe, você pode definir regras de segurança, como quais rotas são públicas, quais exigem autenticação, quais roles têm acesso a quais recursos, etc. Você pode usar métodos como http.authorizeRequests() para configurar essas regras.
-
-*/
-
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -44,6 +32,7 @@ public class SecurityConfiguration {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         return httpSecurity
+                .cors(cors -> {})
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
@@ -52,6 +41,9 @@ public class SecurityConfiguration {
                         .requestMatchers("/", "/index.html", "/css/**", "/js/**").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/users/**").hasRole("ADMIN")
+                        // /orders/me é acessível por qualquer usuário autenticado
+                        .requestMatchers(HttpMethod.GET, "/orders/me").authenticated()
+                        // demais rotas de /orders são restritas a ADMIN
                         .requestMatchers("/orders/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/categories/**").permitAll()
@@ -83,5 +75,3 @@ public class SecurityConfiguration {
     }
 
 }
-
-

@@ -2,13 +2,6 @@
 function getToken() { return localStorage.getItem('token') }
 function getEmail() { return localStorage.getItem('userEmail') }
 
-function authHeaders() {
-  return {
-    'Content-Type': 'application/json',
-    'Authorization': 'Bearer ' + getToken()
-  }
-}
-
 function apiFetch(url, options = {}) {
   if (!options.headers) options.headers = {}
   options.headers['Authorization'] = 'Bearer ' + getToken()
@@ -42,20 +35,14 @@ function doLogin() {
       return r.json()
     })
     .then(data => {
-      // Salva o token temporariamente para chamar /auth/me
       localStorage.setItem('token', data.token)
-
-      // Verifica o role antes de liberar o painel
-      return fetch('/auth/me', {
-        headers: { 'Authorization': 'Bearer ' + data.token }
-      })
+      return fetch('/auth/me', { headers: { 'Authorization': 'Bearer ' + data.token } })
     })
     .then(r => r.json())
     .then(user => {
       if (user.role !== 'ADMIN') {
         localStorage.removeItem('token')
-        document.getElementById('login-error').textContent =
-          'Acesso restrito a administradores.'
+        document.getElementById('login-error').textContent = 'Acesso restrito a administradores.'
         return
       }
       localStorage.setItem('userEmail', user.email)
@@ -83,14 +70,11 @@ function showApp() {
   fetchCategories().then(() => loadUsers())
 }
 
-// Ao carregar a página, verifica se já tem token
 window.addEventListener('load', () => {
   document.getElementById('login-password').addEventListener('keydown', e => {
     if (e.key === 'Enter') doLogin()
   })
-  if (getToken()) {
-    showApp()
-  }
+  if (getToken()) showApp()
 })
 
 // ── CACHE DE CATEGORIAS ─────────────────────────────────────
@@ -198,7 +182,6 @@ function createUser() {
     role:     document.getElementById('create-role').value
   }
   if (!body.name || !body.email) { toast('Preencha nome e email', 'error'); return }
-
   apiFetch('/auth/register', { method: 'POST', body: JSON.stringify(body) })
     .then(r => {
       if (r.status === 400) throw new Error('Email já cadastrado')
@@ -256,6 +239,8 @@ function confirmDelete() {
 }
 
 // ── PEDIDOS ─────────────────────────────────────────────────
+// Agora usa OrderResponseDTO: { id, moment, orderStatus, clientEmail, clientName, items[], total, paymentMoment, address }
+// items[]: { productId, productName, productPrice, quantity, subTotal }
 function loadOrders() {
   showLoading('orders-loading')
   apiFetch('/orders')
@@ -266,6 +251,7 @@ function loadOrders() {
       setRequestInfo('GET', '/orders', 200)
       const list = document.getElementById('orders-list')
       list.innerHTML = ''
+
       const statusMap = {
         PAID:            { cls: 'tag-paid',      label: 'Pago' },
         WAITING_PAYMENT: { cls: 'tag-waiting',   label: 'Aguardando' },
@@ -273,23 +259,34 @@ function loadOrders() {
         DELIVERED:       { cls: 'tag-delivered', label: 'Entregue' },
         CANCELED:        { cls: 'tag-canceled',  label: 'Cancelado' }
       }
+
       orders.forEach(order => {
-        const status  = statusMap[order.orderStatus] || { cls: 'tag-waiting', label: order.orderStatus }
-        const payment = order.payment ? 'Pago' : 'Pendente'
+        const status   = statusMap[order.orderStatus] || { cls: 'tag-waiting', label: order.orderStatus }
+        const payment  = order.paymentMoment ? 'Pago' : 'Pendente'
+        const dateStr  = order.moment ? order.moment.slice(0, 10) : '—'
+        const total    = typeof order.total === 'number' ? order.total.toFixed(2) : '0.00'
+        const client   = order.clientName || order.clientEmail || '—'
+
+        const address  = order.address
+          ? `${order.address.street}, ${order.address.number} — ${order.address.city}/${order.address.state}`
+          : 'Sem endereço'
+
         const itemsHtml = order.items && order.items.length > 0
           ? order.items.map(i => `
               <div class="order-item">
-                <span>${i.product.name} <span style="color:var(--muted)">x${i.quantity}</span></span>
+                <span>${i.productName} <span style="color:var(--muted)">x${i.quantity}</span></span>
                 <span>R$ ${i.subTotal.toFixed(2)}</span>
               </div>`).join('')
           : '<div class="order-item"><span style="color:var(--muted)">Sem itens</span></div>'
+
         const item = document.createElement('li')
         item.style.cssText = 'flex-direction:column;align-items:flex-start;gap:10px'
         item.innerHTML = `
           <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
             <div class="item-info">
-              <div class="item-name">Pedido #${order.id} — ${order.client.name}</div>
-              <div class="item-sub">Total: R$ ${order.total.toFixed(2)} · Pagamento: ${payment} · ${order.moment.slice(0,10)}</div>
+              <div class="item-name">Pedido #${order.id} — ${client}</div>
+              <div class="item-sub">Total: R$ ${total} · Pagamento: ${payment} · ${dateStr}</div>
+              <div class="item-sub" style="margin-top:2px;font-size:11px;opacity:0.7">📍 ${address}</div>
             </div>
             <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
               <span class="tag ${status.cls}">${status.label}</span>
@@ -347,11 +344,12 @@ function loadProducts() {
         const cats = product.categories && product.categories.length > 0
           ? product.categories.map(c => c.name).join(', ')
           : 'Sem categoria'
+        const stock = product.stockQuantity != null ? product.stockQuantity : '—'
         const item = document.createElement('li')
         item.innerHTML = `
           <div class="item-info">
             <div class="item-name">${product.name}</div>
-            <div class="item-sub">${cats}</div>
+            <div class="item-sub">${cats} · Estoque: ${stock}</div>
           </div>
           <div style="display:flex;align-items:center;gap:8px">
             <span class="item-id">R$ ${product.price.toFixed(2)}</span>
@@ -401,18 +399,20 @@ function getCheckedCategories(containerId) {
 }
 
 function openCreateProductModal() {
-  clearForm('create-product-name', 'create-product-description', 'create-product-price', 'create-product-imgurl')
+  clearForm('create-product-name', 'create-product-description', 'create-product-price', 'create-product-imgurl', 'create-product-stock')
   renderCheckboxes('create-product-categories', allCategories, [])
   openModal('modal-create-product')
 }
 
 function createProduct() {
   const categories = getCheckedCategories('create-product-categories')
+  const stockVal = document.getElementById('create-product-stock').value
   const body = {
-    name:        document.getElementById('create-product-name').value.trim(),
-    description: document.getElementById('create-product-description').value.trim(),
-    price:       parseFloat(document.getElementById('create-product-price').value),
-    imgUrl:      document.getElementById('create-product-imgurl').value.trim(),
+    name:          document.getElementById('create-product-name').value.trim(),
+    description:   document.getElementById('create-product-description').value.trim(),
+    price:         parseFloat(document.getElementById('create-product-price').value),
+    imgUrl:        document.getElementById('create-product-imgurl').value.trim(),
+    stockQuantity: stockVal ? parseInt(stockVal) : 0,
     categories
   }
   if (!body.name || !body.price) { toast('Preencha nome e preço', 'error'); return }
@@ -430,6 +430,7 @@ function openEditProduct(id) {
   document.getElementById('edit-product-description').value = product.description || ''
   document.getElementById('edit-product-price').value       = product.price
   document.getElementById('edit-product-imgurl').value      = product.imgUrl || ''
+  document.getElementById('edit-product-stock').value       = product.stockQuantity || 0
   document.getElementById('edit-product-badge').textContent = `PUT /products/${id}`
   const selectedIds = (product.categories || []).map(c => c.id)
   renderCheckboxes('edit-product-categories', allCategories, selectedIds)
@@ -439,11 +440,13 @@ function openEditProduct(id) {
 function updateProduct() {
   const id         = document.getElementById('edit-product-id').value
   const categories = getCheckedCategories('edit-product-categories')
+  const stockVal   = document.getElementById('edit-product-stock').value
   const body = {
-    name:        document.getElementById('edit-product-name').value.trim(),
-    description: document.getElementById('edit-product-description').value.trim(),
-    price:       parseFloat(document.getElementById('edit-product-price').value),
-    imgUrl:      document.getElementById('edit-product-imgurl').value.trim(),
+    name:          document.getElementById('edit-product-name').value.trim(),
+    description:   document.getElementById('edit-product-description').value.trim(),
+    price:         parseFloat(document.getElementById('edit-product-price').value),
+    imgUrl:        document.getElementById('edit-product-imgurl').value.trim(),
+    stockQuantity: stockVal ? parseInt(stockVal) : 0,
     categories
   }
   apiFetch('/products/' + id, { method: 'PUT', body: JSON.stringify(body) })

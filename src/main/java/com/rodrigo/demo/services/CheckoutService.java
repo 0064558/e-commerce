@@ -23,7 +23,7 @@ public class CheckoutService {
     private ProductRepository productRepository;
 
     @Autowired
-    private AddressRepository addressRepository; // ✅ faltava ;
+    private AddressRepository addressRepository;
 
     @Transactional
     public Order checkout(String email, Long addressId) {
