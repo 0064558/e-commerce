@@ -1,16 +1,134 @@
-# React + Vite
+# NEXUS STORE - E-Commerce Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Frontend em React para a plataforma de e-commerce NEXUS STORE.
 
-Currently, two official plugins are available:
+## Estrutura do Projeto
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```
+front/
+├── public/
+│   └── index.html
+├── src/
+│   ├── components/          # Componentes reutilizáveis
+│   │   ├── Navbar.jsx
+│   │   ├── Navbar.css
+│   │   ├── CartDrawer.jsx
+│   │   ├── CartDrawer.css
+│   │   ├── Alert.jsx
+│   │   ├── Alert.css
+│   │   ├── Spinner.jsx
+│   │   └── Spinner.css
+│   ├── pages/              # Páginas principais
+│   │   ├── LoginPage.jsx
+│   │   ├── LoginPage.css
+│   │   ├── ProductsPage.jsx
+│   │   ├── ProductsPage.css
+│   │   ├── OrdersPage.jsx
+│   │   └── OrdersPage.css
+│   ├── contexts/           # React Contexts
+│   │   ├── AuthContext.jsx
+│   │   ├── CartContext.jsx
+│   │   └── NavContext.jsx
+│   ├── services/           # Serviços (API)
+│   │   └── api.js
+│   ├── styles/             # Estilos globais
+│   │   ├── global.css
+│   │   └── forms.css
+│   ├── utils/              # Utilitários
+│   │   └── helpers.js
+│   ├── App.jsx             # Componente principal
+│   └── index.jsx           # Ponto de entrada
+├── package.json
+├── .env                    # Variáveis de ambiente
+└── README.md
+```
 
-## React Compiler
+## Requisitos
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Node.js (v14 ou superior)
+- npm ou yarn
 
-## Expanding the ESLint configuration
+## Instalação
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+1. Navegue até a pasta do projeto:
+```bash
+cd front
+```
+
+2. Instale as dependências:
+```bash
+npm install
+```
+
+## Configuração
+
+Configure a URL da API no arquivo `.env`:
+
+```env
+REACT_APP_API_URL=http://localhost:8080
+```
+
+## Execução
+
+Para iniciar o servidor de desenvolvimento:
+
+```bash
+npm start
+```
+
+A aplicação será aberta em `http://localhost:3000`
+
+## Build
+
+Para criar uma versão de produção:
+
+```bash
+npm run build
+```
+
+## Características
+
+- ✅ Autenticação com JWT
+- ✅ Catálogo de produtos com busca e filtros
+- ✅ Carrinho de compras
+- ✅ Histórico de pedidos
+- ✅ Design moderno com tema escuro
+- ✅ Totalmente responsivo
+
+## Componentes Principais
+
+### Navbar
+Barra de navegação com links para produtos, pedidos e carrinho.
+
+### ProductsPage
+Exibe o catálogo de produtos com busca, filtros por categoria e opção de adicionar ao carrinho.
+
+### CartDrawer
+Painel lateral com o carrinho de compras, permitindo gerenciar quantidade e remover itens.
+
+### OrdersPage
+Exibe o histórico de pedidos do usuário com status e detalhes.
+
+### LoginPage
+Página de autenticação com email e senha.
+
+## API Endpoints Utilizados
+
+- `POST /auth/login` - Autenticação
+- `GET /auth/me` - Dados do usuário logado
+- `GET /products` - Lista de produtos
+- `GET /categories` - Lista de categorias
+- `GET /cart` - Dados do carrinho
+- `POST /cart/items` - Adicionar item ao carrinho
+- `PUT /cart/items/{productId}` - Atualizar item
+- `DELETE /cart/items/{productId}` - Remover item
+- `DELETE /cart` - Limpar carrinho
+- `GET /orders/me` - Pedidos do usuário
+
+## Estilos
+
+O projeto utiliza um tema de cores personalizado com paleta roxa e azul. Para customizar, edite as variáveis CSS em `src/styles/global.css`.
+
+## Licença
+
+Todos os direitos reservados © NEXUS STORE 2026

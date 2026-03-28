@@ -1,0 +1,249 @@
+.checkout-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.checkout-grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 2rem;
+  padding: 2rem 0 3rem;
+  align-items: start;
+}
+
+.section-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: var(--purple-light);
+  text-transform: uppercase;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--border), transparent);
+}
+
+.section-title-sm {
+  font-size: 0.75rem;
+}
+
+.section-title-top {
+  margin-top: 2rem;
+}
+
+.address-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.address-card:hover {
+  border-color: var(--purple);
+}
+
+.address-card.selected {
+  border-color: var(--purple);
+  background: rgba(124, 58, 237, 0.1);
+}
+
+.address-card.selected::before {
+  content: '✓';
+  position: absolute;
+  top: 0.75rem;
+  right: 1rem;
+  color: var(--purple-light);
+  font-size: 1.1rem;
+}
+
+.address-default-badge {
+  font-size: 0.65rem;
+  background: rgba(124, 58, 237, 0.2);
+  border: 1px solid var(--purple-dim);
+  border-radius: 4px;
+  padding: 0.1rem 0.4rem;
+  color: var(--purple-light);
+  letter-spacing: 1px;
+  display: inline-block;
+  margin-bottom: 0.4rem;
+}
+
+.address-line {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+
+.address-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.add-address-toggle {
+  background: var(--surface2);
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  padding: 1rem;
+  cursor: pointer;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  transition: all 0.2s;
+  letter-spacing: 1px;
+  width: 100%;
+}
+
+.add-address-toggle:hover {
+  border-color: var(--purple);
+  color: var(--purple-light);
+}
+
+.address-form-panel {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.25rem;
+  margin-top: 0.75rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.payment-sim {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.payment-methods {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.payment-method {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+  color: var(--text-dim);
+  font-size: 0.82rem;
+}
+
+.payment-method:hover {
+  border-color: var(--purple);
+}
+
+.payment-method.selected {
+  border-color: var(--purple);
+  background: rgba(124, 58, 237, 0.1);
+  color: var(--purple-light);
+}
+
+.payment-method-icon {
+  font-size: 1.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.order-summary {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  position: sticky;
+  top: 80px;
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 0.85rem;
+}
+
+.summary-item:last-child {
+  border-bottom: none;
+}
+
+.summary-item-name {
+  color: var(--text-dim);
+  flex: 1;
+  margin-right: 1rem;
+}
+
+.summary-item-val {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.8rem;
+  color: var(--text);
+}
+
+.summary-total {
+  display: flex;
+  justify-content: space-between;
+  padding: 1rem 0 0;
+  margin-top: 0.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.summary-total-label {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+
+.summary-total-val {
+  font-family: 'Orbitron', monospace;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--purple-glow);
+}
+
+.checkout-confirm-wrap {
+  margin-top: 1.5rem;
+}
+
+.checkout-hint {
+  text-align: center;
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 900px) {
+  .checkout-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .payment-methods {
+    grid-template-columns: 1fr 1fr;
+  }
+}
