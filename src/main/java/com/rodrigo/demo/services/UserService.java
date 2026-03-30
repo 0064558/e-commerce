@@ -7,6 +7,7 @@ import com.rodrigo.demo.services.exceptions.ResourceNotFoundException;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -41,6 +42,9 @@ public class UserService {
      */
     @Autowired
     private UserRepository repository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     /**
      * Busca todos os usuários cadastrados.
@@ -100,5 +104,24 @@ public class UserService {
         entity.setName(obj.getName());
         entity.setEmail(obj.getEmail());
         entity.setPhone(obj.getPhone());
+    }
+
+    public void updatePassword(Long id, String currentPassword, String newPassword) {
+        if (currentPassword == null || currentPassword.isBlank()) {
+            throw new IllegalStateException("Senha atual obrigatoria.");
+        }
+        if (newPassword == null || newPassword.isBlank()) {
+            throw new IllegalStateException("Nova senha obrigatoria.");
+        }
+
+        User entity = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(id));
+
+        if (!passwordEncoder.matches(currentPassword, entity.getPassword())) {
+            throw new IllegalStateException("Senha atual invalida.");
+        }
+
+        entity.setPassword(passwordEncoder.encode(newPassword));
+        repository.save(entity);
     }
 }

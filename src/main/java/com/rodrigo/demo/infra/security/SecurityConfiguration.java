@@ -40,6 +40,7 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.POST, "/auth/register").permitAll()
                         .requestMatchers("/", "/index.html", "/css/**", "/js/**").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/users/**").authenticated()
                         .requestMatchers("/users/**").hasRole("ADMIN")
                         // /orders/me é acessível por qualquer usuário autenticado
                         .requestMatchers(HttpMethod.GET, "/orders/me").authenticated()

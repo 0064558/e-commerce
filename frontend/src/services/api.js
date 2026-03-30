@@ -165,6 +165,15 @@ class APIService {
   getOrder(id) {
     return this.get(`/orders/${id}`);
   }
+
+  // Users endpoints
+  updateUser(id, user) {
+    return this.put(`/users/${id}`, user);
+  }
+
+  updateMyPassword(currentPassword, newPassword) {
+    return this.put('/users/me/password', { currentPassword, newPassword });
+  }
 }
 
   const apiService = new APIService();

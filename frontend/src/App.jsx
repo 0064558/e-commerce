@@ -6,6 +6,7 @@ import LoginPage from './pages/LoginPage';
 import ProductsPage from './pages/ProductsPage';
 import OrdersPage from './pages/OrdersPage';
 import AddressesPage from './pages/AddressesPage';
+import ProfilePage from './pages/ProfilePage';
 import CheckoutPage from './pages/CheckoutPage.js';
 import SuccessPage from './pages/SuccessPage.js';
 import Alert from './components/Alert';
@@ -30,6 +31,7 @@ function App() {
     '/products': 'products',
     '/orders': 'orders',
     '/addresses': 'addresses',
+    '/profile': 'profile',
     '/checkout': 'checkout',
     '/success': 'success',
   };
@@ -38,6 +40,7 @@ function App() {
     products: '/products',
     orders: '/orders',
     addresses: '/addresses',
+    profile: '/profile',
     checkout: '/checkout',
     success: '/success',
   };
@@ -105,6 +108,10 @@ function App() {
     setCart(null);
     setSuccessOrder(null);
     navigate('/', { replace: true });
+  };
+
+  const handleUserUpdated = (updatedUser) => {
+    setUser(updatedUser);
   };
 
   const handleAddToCart = async (productId, quantity) => {
@@ -208,6 +215,7 @@ function App() {
         <Route path="/products" element={<ProductsPage onAddToCart={handleAddToCart} />} />
         <Route path="/orders" element={<OrdersPage user={user} />} />
         <Route path="/addresses" element={<AddressesPage />} />
+        <Route path="/profile" element={<ProfilePage user={user} onUserUpdated={handleUserUpdated} />} />
         <Route
           path="/checkout"
           element={

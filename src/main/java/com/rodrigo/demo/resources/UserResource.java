@@ -1,10 +1,13 @@
 package com.rodrigo.demo.resources;
 
 import com.rodrigo.demo.entities.User;
+import com.rodrigo.demo.entities.records.ChangePasswordDTO;
 import com.rodrigo.demo.entities.records.UserResponseDTO;
 import com.rodrigo.demo.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -91,8 +94,31 @@ public class UserResource {
     }
 
     @PutMapping(value = "/{id}")
-    public ResponseEntity<User> update(@PathVariable Long id, @RequestBody User obj) {
+    public ResponseEntity<User> update(@PathVariable Long id, @RequestBody User obj, Authentication authentication) {
+        if (authentication == null || !(authentication.getPrincipal() instanceof User)) {
+            throw new AccessDeniedException("Unauthorized");
+        }
+
+        User authUser = (User) authentication.getPrincipal();
+        boolean isAdmin = authUser.getAuthorities().stream()
+                .anyMatch(authority -> "ROLE_ADMIN".equals(authority.getAuthority()));
+
+        if (!isAdmin && (authUser.getId() == null || !authUser.getId().equals(id))) {
+            throw new AccessDeniedException("Forbidden");
+        }
+
         obj = service.update(id, obj);
         return ResponseEntity.ok().body(obj);
+    }
+
+    @PutMapping(value = "/me/password")
+    public ResponseEntity<Void> updateMyPassword(@RequestBody ChangePasswordDTO body, Authentication authentication) {
+        if (authentication == null || !(authentication.getPrincipal() instanceof User)) {
+            throw new AccessDeniedException("Unauthorized");
+        }
+
+        User authUser = (User) authentication.getPrincipal();
+        service.updatePassword(authUser.getId(), body.currentPassword(), body.newPassword());
+        return ResponseEntity.noContent().build();
     }
 }

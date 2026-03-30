@@ -28,6 +28,12 @@ function Navbar({ user, onLogout, cartCount, onCartOpen, currentPage, onNavigate
         >
           Endereços
         </button>
+        <button
+          className={`nav-btn ${currentPage === 'profile' ? 'active' : ''}`}
+          onClick={() => onNavigate('profile')}
+        >
+          Perfil
+        </button>
         <button className="cart-btn" onClick={onCartOpen}>
           🛒 Carrinho
           {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
