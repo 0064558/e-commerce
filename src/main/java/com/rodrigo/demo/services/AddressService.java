@@ -4,8 +4,10 @@ import com.rodrigo.demo.entities.Address;
 import com.rodrigo.demo.entities.User;
 import com.rodrigo.demo.repositories.AddressRepository;
 import com.rodrigo.demo.repositories.UserRepository;
+import com.rodrigo.demo.services.exceptions.DatabaseException;
 import com.rodrigo.demo.services.exceptions.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -90,25 +92,29 @@ public class AddressService {
     }
 
     public void delete(Long id, String email) {
-        Address address = findById(id, email);
-        Long userId = address.getUser().getId();
+        try {
+            Address address = findById(id, email);
+            Long userId = address.getUser().getId();
 
-        boolean wasDefault = Boolean.TRUE.equals(address.getDefaultAddress());
+            boolean wasDefault = Boolean.TRUE.equals(address.getDefaultAddress());
 
-        // Deleta primeiro
-        addressRepository.delete(address);
+            // Deleta primeiro
+            addressRepository.delete(address);
 
-        // FORÇA sincronização com banco
-        addressRepository.flush();
+            // FORÇA sincronização com banco
+            addressRepository.flush();
 
-        if (wasDefault) {
-            List<Address> remaining = addressRepository.findByUserId(userId);
+            if (wasDefault) {
+                List<Address> remaining = addressRepository.findByUserId(userId);
 
-            if (!remaining.isEmpty()) {
-                Address newDefault = remaining.get(0);
-                newDefault.setDefaultAddress(true);
-                addressRepository.save(newDefault);
+                if (!remaining.isEmpty()) {
+                    Address newDefault = remaining.get(0);
+                    newDefault.setDefaultAddress(true);
+                    addressRepository.save(newDefault);
+                }
             }
+        } catch (DataIntegrityViolationException e) {
+            throw new DatabaseException("Endereco vinculado a pedidos e nao pode ser removido.");
         }
     }
 }

@@ -1,0 +1,123 @@
+/* Institutional pages styles */
+
+.institutional-hero {
+  padding: 2.8rem 0 2rem;
+  display: grid;
+  gap: 1.5rem;
+}
+
+.institutional-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(124, 58, 237, 0.16);
+  color: var(--purple-glow);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.institutional-title {
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(2rem, 2.6vw, 2.8rem);
+  color: var(--text);
+  margin: 0.2rem 0;
+}
+
+.institutional-lead {
+  color: var(--text-dim);
+  font-size: 1rem;
+  max-width: 720px;
+  line-height: 1.7;
+}
+
+.institutional-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+}
+
+.institutional-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.2rem;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s, border 0.2s;
+  color: inherit;
+}
+
+.institutional-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(124, 58, 237, 0.4);
+  box-shadow: 0 16px 32px rgba(12, 16, 22, 0.45);
+}
+
+.institutional-card-title {
+  font-weight: 600;
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.institutional-card-text {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.institutional-content {
+  display: grid;
+  gap: 1.2rem;
+  margin-bottom: 3rem;
+}
+
+.content-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.25rem 1.5rem;
+}
+
+.content-card h3 {
+  font-family: 'Orbitron', monospace;
+  font-size: 1.1rem;
+  margin-bottom: 0.6rem;
+}
+
+.content-card p {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+
+.content-list {
+  margin-top: 0.8rem;
+  display: grid;
+  gap: 0.5rem;
+  color: var(--text-dim);
+  font-size: 0.88rem;
+}
+
+.institutional-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.institutional-actions .btn {
+  width: auto;
+}
+
+@media (max-width: 720px) {
+  .institutional-hero {
+    padding-top: 2rem;
+  }
+
+  .institutional-actions {
+    flex-direction: column;
+  }
+}

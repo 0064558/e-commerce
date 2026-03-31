@@ -60,7 +60,6 @@ public class UserService {
      *
      * @param id Identificador do usuário
      * @return O usuário encontrado
-     * @throws NoSuchElementException se o usuário não existir
      *
      * NOTA: obj.get() lança NoSuchElementException se vazio.
      * Em produção, considere lançar uma exceção customizada como
@@ -104,6 +103,52 @@ public class UserService {
         entity.setName(obj.getName());
         entity.setEmail(obj.getEmail());
         entity.setPhone(obj.getPhone());
+        if (obj.getTaxId() == null || obj.getTaxId().isBlank()) {
+            throw new IllegalStateException("CPF obrigatorio.");
+        }
+        if (!isValidCpf(obj.getTaxId())) {
+            throw new IllegalStateException("CPF invalido.");
+        }
+        entity.setTaxId(obj.getTaxId());
+    }
+
+    private boolean isValidCpf(String value) {
+        String digits = value == null ? "" : value.replaceAll("\\D", "");
+        if (digits.length() != 11) {
+            return false;
+        }
+        boolean allEqual = true;
+        for (int i = 1; i < digits.length(); i++) {
+            if (digits.charAt(i) != digits.charAt(0)) {
+                allEqual = false;
+                break;
+            }
+        }
+        if (allEqual) {
+            return false;
+        }
+
+        int sum = 0;
+        for (int i = 0; i < 9; i++) {
+            sum += (digits.charAt(i) - '0') * (10 - i);
+        }
+        int firstCheck = (sum * 10) % 11;
+        if (firstCheck == 10) {
+            firstCheck = 0;
+        }
+        if (firstCheck != digits.charAt(9) - '0') {
+            return false;
+        }
+
+        sum = 0;
+        for (int i = 0; i < 10; i++) {
+            sum += (digits.charAt(i) - '0') * (11 - i);
+        }
+        int secondCheck = (sum * 10) % 11;
+        if (secondCheck == 10) {
+            secondCheck = 0;
+        }
+        return secondCheck == digits.charAt(10) - '0';
     }
 
     public void updatePassword(Long id, String currentPassword, String newPassword) {

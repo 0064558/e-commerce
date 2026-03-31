@@ -42,6 +42,12 @@
             <artifactId>spring-boot-starter-webmvc</artifactId>
         </dependency>
 
+        <!-- Spring Web (includes Jackson + RestTemplateBuilder) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
         <!-- H2 Database - Apenas para testes -->
         <dependency>
             <groupId>com.h2database</groupId>
@@ -94,8 +100,6 @@
             <artifactId>java-jwt</artifactId>
             <version>4.5.1</version>
         </dependency>
-
-
     </dependencies>
 
     <build>

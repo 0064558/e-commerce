@@ -8,6 +8,8 @@ import java.util.List;
 
 public record OrderResponseDTO(
         Long id,
+        String externalId,
+    String checkoutUrl,
         Instant moment,
         String orderStatus,
         String clientEmail,
@@ -39,6 +41,8 @@ public record OrderResponseDTO(
     public static OrderResponseDTO from(Order order) {
         return new OrderResponseDTO(
                 order.getId(),
+                order.getExternalId(),
+                order.getAbacatePayCheckoutUrl(),
                 order.getMoment(),
                 order.getOrderStatus().name(),
                 order.getClient().getEmail(),

@@ -1,4 +1,12 @@
 /* Orders Page styles */
+.orders-page .page-header {
+  margin-bottom: 1rem;
+}
+
+.orders-page .page-title {
+  margin-bottom: 0.35rem;
+}
+
 .orders-list {
   padding: 2rem 0 3rem;
 }
@@ -97,6 +105,27 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.order-pay-btn.btn {
+  width: auto;
+  flex-shrink: 0;
+  font-size: 0.90rem;
+  padding: 1rem 5rem;
+  letter-spacing: 6px;
+  min-height: 49px;
+  border-width: 0.5px;
+  border: 1px;
+}
+
+.order-warning {
+  margin-top: 0.75rem;
+  font-size: 0.75rem;
+  color: var(--danger);
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
 }
 
 .order-total {

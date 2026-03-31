@@ -48,6 +48,7 @@ public class User implements Serializable, UserDetails {
     private String email;
 
     private String phone;
+    private String taxId;
     private String password;
 
     @Enumerated(EnumType.STRING)
@@ -68,19 +69,29 @@ public class User implements Serializable, UserDetails {
     }
 
     public User(String name, String email, String phone, String password, UserRole role) {
+        this(name, email, phone, null, password, role);
+    }
+
+    public User(String name, String email, String phone, String taxId, String password, UserRole role) {
         this.name = name;
         this.email = email;
         this.phone = phone;
+        this.taxId = taxId;
         this.password = password;
         this.role = role;
     }
 
     // Construtor com argumentos - conveniência para criar objetos
     public User(Long id, String name, String email, String phone, String password, UserRole role) {
+        this(id, name, email, phone, null, password, role);
+    }
+
+    public User(Long id, String name, String email, String phone, String taxId, String password, UserRole role) {
         this.id = id;
         this.name = name;
         this.email = email;
         this.phone = phone;
+        this.taxId = taxId;
         this.password = password;
         this.role = role;
     }
@@ -118,6 +129,14 @@ public class User implements Serializable, UserDetails {
 
     public void setPhone(String phone) {
         this.phone = phone;
+    }
+
+    public String getTaxId() {
+        return taxId;
+    }
+
+    public void setTaxId(String taxId) {
+        this.taxId = taxId;
     }
 
     @Override

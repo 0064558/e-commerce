@@ -15,16 +15,30 @@ class APIService {
       'Content-Type': 'application/json',
       ...extra,
     };
-    if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`;
+
+    let token = this.token;
+    if (!token) {
+      try {
+        token = sessionStorage.getItem('auth_token');
+        if (token) {
+          this.token = token;
+        }
+      } catch {
+        token = null;
+      }
+    }
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
     }
     return headers;
   }
 
-  async request(method, path, body) {
+  async request(method, path, body, allowRetry = true) {
+    const headers = this.getHeaders();
     const response = await fetch(`${API_BASE}${path}`, {
       method,
-      headers: this.getHeaders(),
+      headers,
       body: body ? JSON.stringify(body) : undefined,
     });
 
@@ -46,6 +60,43 @@ class APIService {
       } else if (rawText) {
         message = rawText;
       }
+
+      const isAuthLoginRequest = path === '/auth/login' || path === '/auth/register';
+      const hasAuthHeader = Boolean(headers.Authorization);
+      const isSessionUnauthorized = response.status === 401 && hasAuthHeader && !isAuthLoginRequest;
+
+      if (isSessionUnauthorized && allowRetry) {
+        let latestToken = null;
+        try {
+          latestToken = sessionStorage.getItem('auth_token');
+        } catch {
+          latestToken = null;
+        }
+        const sentToken = hasAuthHeader ? String(headers.Authorization).replace('Bearer ', '') : null;
+        if (latestToken && latestToken !== sentToken) {
+          this.token = latestToken;
+          return this.request(method, path, body, false);
+        }
+      }
+
+      if (isSessionUnauthorized) {
+        message = 'Sua sessão expirou ou é inválida. Faça login novamente.';
+        this.token = null;
+        try {
+          sessionStorage.removeItem('auth_token');
+          sessionStorage.setItem('login_notice', message);
+        } catch {
+          // noop
+        }
+        if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+          window.dispatchEvent(
+            new CustomEvent('api:auth-expired', {
+              detail: { status: response.status, message },
+            })
+          );
+        }
+      }
+
       const error = new Error(message);
       error.status = response.status;
       throw error;
@@ -150,6 +201,10 @@ class APIService {
 
   // Checkout endpoints
   checkout(addressId) {
+    return this.post('/checkout', { addressId });
+  }
+
+  createAbacatePayCheckout(addressId) {
     return this.post('/checkout', { addressId });
   }
 

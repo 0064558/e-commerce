@@ -126,6 +126,10 @@
   gap: 1rem;
 }
 
+.cep-actions {
+  margin-top: 0.6rem;
+}
+
 .payment-sim {
   background: var(--surface2);
   border: 1px solid var(--border);

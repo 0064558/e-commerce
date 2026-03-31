@@ -23,6 +23,13 @@ public class Order implements Serializable {
 
     private Integer orderStatus;
 
+    @Column(unique = true)
+    private String externalId;
+
+    private String abacatePayBillingId;
+
+    private String abacatePayCheckoutUrl;
+
     @ManyToOne
     @JoinColumn(name = "client_id")
     private User client;
@@ -55,6 +62,30 @@ public class Order implements Serializable {
         if (orderStatus != null) {
             this.orderStatus = orderStatus.getCode();
         }
+    }
+
+    public String getExternalId() {
+        return externalId;
+    }
+
+    public void setExternalId(String externalId) {
+        this.externalId = externalId;
+    }
+
+    public String getAbacatePayBillingId() {
+        return abacatePayBillingId;
+    }
+
+    public void setAbacatePayBillingId(String abacatePayBillingId) {
+        this.abacatePayBillingId = abacatePayBillingId;
+    }
+
+    public String getAbacatePayCheckoutUrl() {
+        return abacatePayCheckoutUrl;
+    }
+
+    public void setAbacatePayCheckoutUrl(String abacatePayCheckoutUrl) {
+        this.abacatePayCheckoutUrl = abacatePayCheckoutUrl;
     }
 
     public Long getId() {

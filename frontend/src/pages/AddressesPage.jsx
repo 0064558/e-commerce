@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Alert from '../components/Alert';
 import Spinner from '../components/Spinner';
 import api from '../services/api';
+import './AddressesPage.css';
 
 function AddressesPage() {
   const [addresses, setAddresses] = useState([]);
@@ -9,6 +10,8 @@ function AddressesPage() {
   const [error, setError] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [isSavingAddress, setIsSavingAddress] = useState(false);
+  const [isCepLoading, setIsCepLoading] = useState(false);
+  const lastCepLookup = useRef('');
   const [addressForm, setAddressForm] = useState({
     street: '',
     number: '',
@@ -22,6 +25,79 @@ function AddressesPage() {
   useEffect(() => {
     loadAddresses();
   }, []);
+
+  useEffect(() => {
+    const digits = (addressForm.zipCode || '').replace(/\D/g, '');
+    if (digits.length === 0) {
+      lastCepLookup.current = '';
+    }
+    if (digits.length !== 8) {
+      setIsCepLoading(false);
+      setError('');
+      setAddressForm((prev) => ({
+        ...prev,
+        street: '',
+        neighborhood: '',
+        city: '',
+        state: '',
+      }));
+    }
+  }, [addressForm.zipCode]);
+
+  const clearCepFields = () => {
+    setAddressForm((prev) => ({
+      ...prev,
+      street: '',
+      neighborhood: '',
+      city: '',
+      state: '',
+    }));
+  };
+
+  const handleCepLookup = async () => {
+    const digits = (addressForm.zipCode || '').replace(/\D/g, '');
+    if (digits.length !== 8) {
+      setError('Informe um CEP válido.');
+      clearCepFields();
+      return;
+    }
+    if (lastCepLookup.current === digits) {
+      return;
+    }
+
+    lastCepLookup.current = digits;
+    setIsCepLoading(true);
+    setError('');
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+      const data = await response.json();
+      if (data?.erro) {
+        setError('CEP não encontrado.');
+        clearCepFields();
+        return;
+      }
+      setAddressForm((prev) => ({
+        ...prev,
+        street: data.logradouro || '',
+        neighborhood: data.bairro || '',
+        city: data.localidade || '',
+        state: data.uf || '',
+      }));
+    } catch (err) {
+      setError('Falha ao consultar CEP.');
+      clearCepFields();
+    } finally {
+      setIsCepLoading(false);
+    }
+  };
+
+  const formatCep = (value) => {
+    const digits = (value || '').replace(/\D/g, '').slice(0, 8);
+    if (digits.length <= 5) {
+      return digits;
+    }
+    return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+  };
 
   const loadAddresses = async () => {
     setIsLoading(true);
@@ -90,7 +166,7 @@ function AddressesPage() {
   };
 
   return (
-    <div className="page">
+    <div className="page addresses-page">
       <div className="container">
         <div className="page-header">
           <div className="page-title">ENDEREÇOS</div>
@@ -197,9 +273,23 @@ function AddressesPage() {
               <label>CEP *</label>
               <input
                 value={addressForm.zipCode}
-                onChange={(event) => setAddressForm((prev) => ({ ...prev, zipCode: event.target.value }))}
+                onChange={(event) =>
+                  setAddressForm((prev) => ({ ...prev, zipCode: formatCep(event.target.value) }))
+                }
                 placeholder="00000-000"
+                inputMode="numeric"
+                maxLength={9}
               />
+              <div className="cep-actions">
+                <button
+                  className="btn btn-ghost btn-sm"
+                  type="button"
+                  onClick={handleCepLookup}
+                  disabled={isCepLoading}
+                >
+                  {isCepLoading ? 'Buscando...' : 'Buscar CEP'}
+                </button>
+              </div>
             </div>
             <button className="btn" onClick={handleSaveAddress} disabled={isSavingAddress}>
               {isSavingAddress ? 'Salvando...' : 'SALVAR ENDEREÇO'}

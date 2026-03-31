@@ -30,8 +30,19 @@ function OrdersPage({ user }) {
     }
   };
 
+  const handlePayNow = (order, event) => {
+    if (event) {
+      event.stopPropagation();
+    }
+    if (!order?.checkoutUrl) {
+      setError('Checkout indisponível para este pedido.');
+      return;
+    }
+    window.open(order.checkoutUrl, '_blank', 'noopener,noreferrer');
+  };
+
   return (
-    <div className="page">
+    <div className="page orders-page">
       <div className="container">
         <div className="page-header">
           <div className="page-title">{isAdmin ? 'TODOS OS PEDIDOS' : 'MEUS PEDIDOS'}</div>
@@ -55,6 +66,9 @@ function OrdersPage({ user }) {
             </div>
           ) : (
             orders.map((order) => (
+              (() => {
+                const statusValue = order.orderStatus || order.status;
+                return (
               <div
                 key={order.id}
                 className="order-card"
@@ -92,8 +106,25 @@ function OrdersPage({ user }) {
                       </div>
                     )}
                   </div>
+                  {statusValue === 'WAITING_PAYMENT' && order.checkoutUrl && (
+                    <button
+                      className="btn btn-ghost order-pay-btn"
+                      type="button"
+                      onClick={(event) => handlePayNow(order, event)}
+                    >
+                      PAGAR AGORA
+                    </button>
+                  )}
                 </div>
+
+                {statusValue === 'CANCELED' && (
+                  <div className="order-warning">
+                    Pedido cancelado por indisponibilidade de estoque. Se houve pagamento, entre em contato para estorno.
+                  </div>
+                )}
               </div>
+                );
+              })()
             ))
           )}
         </div>
@@ -102,6 +133,7 @@ function OrdersPage({ user }) {
           <OrderDetailModal
             order={selectedOrder}
             onClose={() => setSelectedOrder(null)}
+            onPayNow={handlePayNow}
           />
         )}
       </div>
@@ -109,7 +141,7 @@ function OrdersPage({ user }) {
   );
 }
 
-function OrderDetailModal({ order, onClose }) {
+function OrderDetailModal({ order, onClose, onPayNow }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
@@ -130,6 +162,17 @@ function OrderDetailModal({ order, onClose }) {
               {getStatusLabel(order.orderStatus || order.status)}
             </span>
           </div>
+          {(order.orderStatus || order.status) === 'WAITING_PAYMENT' && order.checkoutUrl && (
+            <button className="btn btn-ghost order-pay-btn" type="button" onClick={() => onPayNow(order)}>
+              PAGAR AGORA
+            </button>
+          )}
+          {order.orderStatus === 'CANCELED' && (
+            <Alert
+              type="error"
+              message="Pedido cancelado por indisponibilidade de estoque. Se houve pagamento, entre em contato para estorno."
+            />
+          )}
           <div className="info-detail">
             <span className="info-label">Data:</span>
             <span className="info-val">{formatDate(order.moment || order.createdAt)}</span>

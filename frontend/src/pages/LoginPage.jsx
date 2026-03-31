@@ -1,12 +1,54 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Alert from '../components/Alert';
 import './LoginPage.css';
 import api from '../services/api';
 
 function LoginPage({ onLoginSuccess }) {
+  const isValidCpf = (value) => {
+    const digits = (value || '').replace(/\D/g, '');
+    if (digits.length !== 11) return false;
+    if (/^(\d)\1{10}$/.test(digits)) return false;
+
+    let sum = 0;
+    for (let i = 0; i < 9; i += 1) {
+      sum += Number(digits.charAt(i)) * (10 - i);
+    }
+    let firstCheck = (sum * 10) % 11;
+    if (firstCheck === 10) firstCheck = 0;
+    if (firstCheck !== Number(digits.charAt(9))) return false;
+
+    sum = 0;
+    for (let i = 0; i < 10; i += 1) {
+      sum += Number(digits.charAt(i)) * (11 - i);
+    }
+    let secondCheck = (sum * 10) % 11;
+    if (secondCheck === 10) secondCheck = 0;
+    return secondCheck === Number(digits.charAt(10));
+  };
+
+  const formatCpf = (value) => {
+    const digits = (value || '').replace(/\D/g, '').slice(0, 11);
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+    if (digits.length <= 9) {
+      return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+    }
+    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+  };
+
+  const formatPhone = (value) => {
+    const digits = (value || '').replace(/\D/g, '').slice(0, 11);
+    if (digits.length <= 2) return digits;
+    if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+    if (digits.length <= 10) {
+      return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+    }
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  };
   const [tab, setTab] = useState('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loginNotice, setLoginNotice] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -14,11 +56,20 @@ function LoginPage({ onLoginSuccess }) {
     name: '',
     email: '',
     phone: '',
+    taxId: '',
     password: '',
   });
   const [registerError, setRegisterError] = useState('');
   const [registerSuccess, setRegisterSuccess] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
+
+  useEffect(() => {
+    const notice = sessionStorage.getItem('login_notice');
+    if (notice) {
+      setLoginNotice(notice);
+      sessionStorage.removeItem('login_notice');
+    }
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -52,6 +103,7 @@ function LoginPage({ onLoginSuccess }) {
 
   const handleTabChange = (newTab) => {
     setTab(newTab);
+    setLoginNotice('');
     setError('');
     setRegisterError('');
     setRegisterSuccess('');
@@ -60,8 +112,12 @@ function LoginPage({ onLoginSuccess }) {
   const handleRegister = async (e) => {
     e.preventDefault();
 
-    if (!registerForm.name || !registerForm.email || !registerForm.phone || !registerForm.password) {
+    if (!registerForm.name || !registerForm.email || !registerForm.phone || !registerForm.taxId || !registerForm.password) {
       setRegisterError('Preencha todos os campos.');
+      return;
+    }
+    if (!isValidCpf(registerForm.taxId)) {
+      setRegisterError('CPF inválido.');
       return;
     }
 
@@ -74,6 +130,7 @@ function LoginPage({ onLoginSuccess }) {
         name: registerForm.name,
         email: registerForm.email,
         phone: registerForm.phone,
+        taxId: registerForm.taxId,
         password: registerForm.password,
         role: 'USER',
       });
@@ -82,6 +139,7 @@ function LoginPage({ onLoginSuccess }) {
         name: '',
         email: '',
         phone: '',
+        taxId: '',
         password: '',
       });
     } catch (err) {
@@ -115,6 +173,7 @@ function LoginPage({ onLoginSuccess }) {
 
         {tab === 'login' ? (
           <form onSubmit={handleLogin}>
+            <Alert type="info" message={loginNotice} />
             <Alert type="error" message={error} />
             <div className="form-group">
               <label>E-mail</label>
@@ -188,9 +247,27 @@ function LoginPage({ onLoginSuccess }) {
               <input
                 type="tel"
                 value={registerForm.phone}
-                onChange={(e) => setRegisterForm((prev) => ({ ...prev, phone: e.target.value }))}
+                onChange={(e) =>
+                  setRegisterForm((prev) => ({ ...prev, phone: formatPhone(e.target.value) }))
+                }
                 placeholder="(11) 99999-9999"
+                inputMode="numeric"
+                maxLength={15}
                 autoComplete="tel"
+              />
+            </div>
+
+            <div className="form-group">
+              <label>CPF</label>
+              <input
+                value={registerForm.taxId}
+                onChange={(e) =>
+                  setRegisterForm((prev) => ({ ...prev, taxId: formatCpf(e.target.value) }))
+                }
+                placeholder="000.000.000-00"
+                inputMode="numeric"
+                maxLength={14}
+                autoComplete="off"
               />
             </div>
 

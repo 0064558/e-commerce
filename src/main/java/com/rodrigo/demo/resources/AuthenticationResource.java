@@ -45,10 +45,55 @@ public class AuthenticationResource {
         if(this.repository.findByEmail(data.email()) != null) {
             return ResponseEntity.badRequest().body("E-mail already in use");
         }
+        if (data.taxId() == null || data.taxId().isBlank()) {
+            return ResponseEntity.badRequest().body("CPF obrigatorio");
+        }
+        if (!isValidCpf(data.taxId())) {
+            return ResponseEntity.badRequest().body("CPF invalido");
+        }
         String encryptedPassword = new BCryptPasswordEncoder().encode(data.password());
-        User user = new User(data.name(), data.email(), data.phone(), encryptedPassword, data.role());
+        User user = new User(data.name(), data.email(), data.phone(), data.taxId(), encryptedPassword, data.role());
         this.repository.save(user);
         return ResponseEntity.ok().build();
+    }
+
+    private boolean isValidCpf(String value) {
+        String digits = value == null ? "" : value.replaceAll("\\D", "");
+        if (digits.length() != 11) {
+            return false;
+        }
+        boolean allEqual = true;
+        for (int i = 1; i < digits.length(); i++) {
+            if (digits.charAt(i) != digits.charAt(0)) {
+                allEqual = false;
+                break;
+            }
+        }
+        if (allEqual) {
+            return false;
+        }
+
+        int sum = 0;
+        for (int i = 0; i < 9; i++) {
+            sum += (digits.charAt(i) - '0') * (10 - i);
+        }
+        int firstCheck = (sum * 10) % 11;
+        if (firstCheck == 10) {
+            firstCheck = 0;
+        }
+        if (firstCheck != digits.charAt(9) - '0') {
+            return false;
+        }
+
+        sum = 0;
+        for (int i = 0; i < 10; i++) {
+            sum += (digits.charAt(i) - '0') * (11 - i);
+        }
+        int secondCheck = (sum * 10) % 11;
+        if (secondCheck == 10) {
+            secondCheck = 0;
+        }
+        return secondCheck == digits.charAt(10) - '0';
     }
 
     @GetMapping("/me")

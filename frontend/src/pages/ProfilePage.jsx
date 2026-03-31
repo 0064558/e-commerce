@@ -5,10 +5,52 @@ import api from '../services/api';
 import './ProfilePage.css';
 
 function ProfilePage({ user, onUserUpdated }) {
+  const isValidCpf = (value) => {
+    const digits = (value || '').replace(/\D/g, '');
+    if (digits.length !== 11) return false;
+    if (/^(\d)\1{10}$/.test(digits)) return false;
+
+    let sum = 0;
+    for (let i = 0; i < 9; i += 1) {
+      sum += Number(digits.charAt(i)) * (10 - i);
+    }
+    let firstCheck = (sum * 10) % 11;
+    if (firstCheck === 10) firstCheck = 0;
+    if (firstCheck !== Number(digits.charAt(9))) return false;
+
+    sum = 0;
+    for (let i = 0; i < 10; i += 1) {
+      sum += Number(digits.charAt(i)) * (11 - i);
+    }
+    let secondCheck = (sum * 10) % 11;
+    if (secondCheck === 10) secondCheck = 0;
+    return secondCheck === Number(digits.charAt(10));
+  };
+
+  const formatCpf = (value) => {
+    const digits = (value || '').replace(/\D/g, '').slice(0, 11);
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+    if (digits.length <= 9) {
+      return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+    }
+    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+  };
+
+  const formatPhone = (value) => {
+    const digits = (value || '').replace(/\D/g, '').slice(0, 11);
+    if (digits.length <= 2) return digits;
+    if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+    if (digits.length <= 10) {
+      return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+    }
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  };
   const [form, setForm] = useState({
     name: '',
     email: '',
     phone: '',
+    taxId: '',
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -28,6 +70,7 @@ function ProfilePage({ user, onUserUpdated }) {
       name: user.name || '',
       email: user.email || '',
       phone: user.phone || '',
+      taxId: user.taxId || '',
     });
   }, [user]);
 
@@ -35,12 +78,20 @@ function ProfilePage({ user, onUserUpdated }) {
     event.preventDefault();
 
     if (!user?.id) {
-      setError('Usuario nao identificado.');
+      setError('Usuário não identificado.');
       return;
     }
 
     if (!form.name.trim() || !form.email.trim()) {
       setError('Preencha nome e e-mail.');
+      return;
+    }
+    if (!form.taxId.trim()) {
+      setError('CPF obrigatório.');
+      return;
+    }
+    if (!isValidCpf(form.taxId)) {
+      setError('CPF inválido.');
       return;
     }
 
@@ -53,6 +104,7 @@ function ProfilePage({ user, onUserUpdated }) {
         name: form.name.trim(),
         email: form.email.trim(),
         phone: form.phone.trim(),
+        taxId: form.taxId.trim(),
       };
       const updated = await api.updateUser(user.id, payload);
       const nextUser = {
@@ -60,6 +112,7 @@ function ProfilePage({ user, onUserUpdated }) {
         name: updated?.name ?? payload.name,
         email: updated?.email ?? payload.email,
         phone: updated?.phone ?? payload.phone,
+        taxId: updated?.taxId ?? payload.taxId,
       };
       if (onUserUpdated) {
         onUserUpdated(nextUser);
@@ -81,7 +134,7 @@ function ProfilePage({ user, onUserUpdated }) {
     }
 
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setPasswordError('A confirmacao nao confere.');
+      setPasswordError('A confirmação não confere.');
       return;
     }
 
@@ -159,19 +212,36 @@ function ProfilePage({ user, onUserUpdated }) {
                 <input
                   type="tel"
                   value={form.phone}
-                  onChange={(event) => setForm((prev) => ({ ...prev, phone: event.target.value }))}
+                  onChange={(event) =>
+                    setForm((prev) => ({ ...prev, phone: formatPhone(event.target.value) }))
+                  }
                   placeholder="(11) 99999-9999"
+                  inputMode="numeric"
+                  maxLength={15}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>CPF</label>
+                <input
+                  value={form.taxId}
+                  onChange={(event) =>
+                    setForm((prev) => ({ ...prev, taxId: formatCpf(event.target.value) }))
+                  }
+                  placeholder="000.000.000-00"
+                  inputMode="numeric"
+                  maxLength={14}
                 />
               </div>
 
               <button className="btn" type="submit" disabled={isSaving}>
-                {isSaving ? 'Salvando...' : 'SALVAR ALTERACOES'}
+                {isSaving ? 'Salvando...' : 'SALVAR ALTERAÇÕES'}
               </button>
             </form>
           </div>
 
           <div className="profile-card">
-            <div className="profile-section-title">Seguranca</div>
+            <div className="profile-section-title">Segurança</div>
             <Alert type="error" message={passwordError} />
             <Alert type="success" message={passwordSuccess} />
 

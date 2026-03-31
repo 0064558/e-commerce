@@ -4,11 +4,17 @@ import Navbar from './components/Navbar';
 import CartDrawer from './components/CartDrawer';
 import LoginPage from './pages/LoginPage';
 import ProductsPage from './pages/ProductsPage';
+import ProductDetailPage from './pages/ProductDetailPage';
 import OrdersPage from './pages/OrdersPage';
 import AddressesPage from './pages/AddressesPage';
 import ProfilePage from './pages/ProfilePage';
 import CheckoutPage from './pages/CheckoutPage.js';
 import SuccessPage from './pages/SuccessPage.js';
+import InstitutionalHub from './pages/InstitutionalHub';
+import AboutPage from './pages/AboutPage';
+import ReturnsPage from './pages/ReturnsPage';
+import ShippingPage from './pages/ShippingPage';
+import SecurityPage from './pages/SecurityPage';
 import Alert from './components/Alert';
 import './styles/global.css';
 import './styles/forms.css';
@@ -27,6 +33,27 @@ function App() {
   const [isCartLoading, setIsCartLoading] = useState(false);
   const [appError, setAppError] = useState('');
 
+  useEffect(() => {
+    const handleAuthExpired = (event) => {
+      const message = event?.detail?.message || 'Sua sessão expirou ou é inválida. Faça login novamente.';
+      api.setToken(null);
+      sessionStorage.removeItem('auth_token');
+      sessionStorage.setItem('login_notice', message);
+      setToken(null);
+      setUser(null);
+      setCart(null);
+      setSuccessOrder(null);
+      setIsCartOpen(false);
+      setAppError('');
+      navigate('/', { replace: true });
+    };
+
+    window.addEventListener('api:auth-expired', handleAuthExpired);
+    return () => {
+      window.removeEventListener('api:auth-expired', handleAuthExpired);
+    };
+  }, [navigate]);
+
   const pageByPath = {
     '/products': 'products',
     '/orders': 'orders',
@@ -34,6 +61,11 @@ function App() {
     '/profile': 'profile',
     '/checkout': 'checkout',
     '/success': 'success',
+    '/institucional': 'institucional',
+    '/sobre': 'sobre',
+    '/devolucao': 'devolucao',
+    '/frete': 'frete',
+    '/seguranca': 'seguranca',
   };
 
   const pathByPage = {
@@ -43,6 +75,11 @@ function App() {
     profile: '/profile',
     checkout: '/checkout',
     success: '/success',
+    institucional: '/institucional',
+    sobre: '/sobre',
+    devolucao: '/devolucao',
+    frete: '/frete',
+    seguranca: '/seguranca',
   };
 
   const currentPage = pageByPath[location.pathname] || 'products';
@@ -60,9 +97,9 @@ function App() {
     }
   }, []);
 
-  // Load token from localStorage on mount
+  // Load token from sessionStorage on mount (per tab)
   useEffect(() => {
-    const savedToken = localStorage.getItem('auth_token');
+    const savedToken = sessionStorage.getItem('auth_token');
     if (!savedToken) {
       return;
     }
@@ -75,7 +112,7 @@ function App() {
       .then((userData) => setUser(userData))
       .catch(() => {
         api.setToken(null);
-        localStorage.removeItem('auth_token');
+        sessionStorage.removeItem('auth_token');
         setToken(null);
         setUser(null);
         setCart(null);
@@ -92,7 +129,7 @@ function App() {
 
   const handleLoginSuccess = (newToken, userData) => {
     api.setToken(newToken);
-    localStorage.setItem('auth_token', newToken);
+    sessionStorage.setItem('auth_token', newToken);
     setToken(newToken);
     setUser(userData);
     setSuccessOrder(null);
@@ -102,7 +139,7 @@ function App() {
 
   const handleLogout = () => {
     api.setToken(null);
-    localStorage.removeItem('auth_token');
+    sessionStorage.removeItem('auth_token');
     setToken(null);
     setUser(null);
     setCart(null);
@@ -213,28 +250,28 @@ function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/products" replace />} />
         <Route path="/products" element={<ProductsPage onAddToCart={handleAddToCart} />} />
+        <Route path="/products/:id" element={<ProductDetailPage onAddToCart={handleAddToCart} />} />
         <Route path="/orders" element={<OrdersPage user={user} />} />
         <Route path="/addresses" element={<AddressesPage />} />
         <Route path="/profile" element={<ProfilePage user={user} onUserUpdated={handleUserUpdated} />} />
+        <Route path="/institucional" element={<InstitutionalHub />} />
+        <Route path="/sobre" element={<AboutPage />} />
+        <Route path="/devolucao" element={<ReturnsPage />} />
+        <Route path="/frete" element={<ShippingPage />} />
+        <Route path="/seguranca" element={<SecurityPage />} />
         <Route
           path="/checkout"
           element={
             <CheckoutPage
               cart={cart}
               onBack={() => navigate('/products')}
-              onSuccess={handleCheckoutSuccess}
+              user={user}
             />
           }
         />
         <Route
           path="/success"
-          element={
-            successOrder ? (
-              <SuccessPage order={successOrder} onContinue={handleContinueShopping} />
-            ) : (
-              <Navigate to="/products" replace />
-            )
-          }
+          element={<SuccessPage order={successOrder} onContinue={handleContinueShopping} />}
         />
         <Route path="*" element={<Navigate to="/products" replace />} />
       </Routes>
