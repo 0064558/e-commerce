@@ -39,6 +39,8 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/register").permitAll()
                         .requestMatchers(HttpMethod.POST, "/webhooks/abacatepay").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/shipping/oauth/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/oauth/callback").permitAll()
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/", "/index.html", "/css/**", "/js/**").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()

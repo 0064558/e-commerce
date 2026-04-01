@@ -151,6 +151,41 @@ public class CheckoutService {
     }
 
     @Transactional
+    public Order attachShippingInfo(Long orderId, Double shippingAmount, String shippingLabel) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException(orderId));
+
+        double amount = shippingAmount == null ? 0.0 : Math.max(0.0, shippingAmount);
+        order.setShippingAmount(amount);
+        order.setShippingLabel(resolveShippingLabel(shippingLabel, amount));
+
+        return orderRepository.save(order);
+    }
+
+    @Transactional
+    public Order prepareOrderForBillingRecreation(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException(orderId));
+
+        // AbacatePay pode reaproveitar checkout antigo quando externalId se repete.
+        order.setExternalId(UUID.randomUUID().toString());
+        order.setAbacatePayBillingId(null);
+        order.setAbacatePayCheckoutUrl(null);
+
+        return orderRepository.save(order);
+    }
+
+    private String resolveShippingLabel(String shippingLabel, double shippingAmount) {
+        if (shippingLabel != null && !shippingLabel.isBlank()) {
+            return shippingLabel.trim();
+        }
+        if (shippingAmount > 0.0) {
+            return "Frete";
+        }
+        return "Frete grátis";
+    }
+
+    @Transactional
     public void applyBillingStatus(String externalId, String billingId, Long orderId, String status, Instant paidAt) {
         Order order = null;
         if (orderId != null) {

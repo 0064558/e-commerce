@@ -41,6 +41,10 @@ public class AbacatePayService {
     }
 
     public AbacatePayCheckoutDTO createBilling(Order order) {
+        return createBilling(order, 0.0, null);
+    }
+
+    public AbacatePayCheckoutDTO createBilling(Order order, Double shippingAmount, String shippingLabel) {
         if (apiKey == null || apiKey.isBlank()) {
             throw new IllegalStateException("AbacatePay API key nao configurada.");
         }
@@ -54,10 +58,13 @@ public class AbacatePayService {
         String returnWithExternal = appendQueryParam(returnUrl, "externalId", order.getExternalId());
         String completionWithExternal = appendQueryParam(completionUrl, "externalId", order.getExternalId());
 
+        double shippingAmountSafe = shippingAmount == null ? 0.0 : Math.max(0.0, shippingAmount);
+        String shippingLabelSafe = (shippingLabel == null || shippingLabel.isBlank()) ? "Frete" : shippingLabel.trim();
+
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("frequency", "ONE_TIME");
         payload.put("methods", List.of("PIX", "CARD"));
-        payload.put("products", buildProducts(order));
+        payload.put("products", buildProducts(order, shippingAmountSafe, shippingLabelSafe));
         payload.put("returnUrl", returnWithExternal);
         payload.put("completionUrl", completionWithExternal);
         payload.put("allowCoupons", false);
@@ -95,7 +102,7 @@ public class AbacatePayService {
         return new AbacatePayCheckoutDTO(billingId, checkoutUrl);
     }
 
-    private List<Map<String, Object>> buildProducts(Order order) {
+    private List<Map<String, Object>> buildProducts(Order order, double shippingAmount, String shippingLabel) {
         List<Map<String, Object>> products = new ArrayList<>();
         for (OrderItem item : order.getItems()) {
             Map<String, Object> entry = new LinkedHashMap<>();
@@ -106,6 +113,17 @@ public class AbacatePayService {
             entry.put("price", Math.round(item.getProduct().getPrice() * 100));
             products.add(entry);
         }
+
+        if (shippingAmount > 0.0) {
+            Map<String, Object> shippingEntry = new LinkedHashMap<>();
+            shippingEntry.put("externalId", "shipping");
+            shippingEntry.put("name", shippingLabel);
+            shippingEntry.put("description", "Frete do pedido");
+            shippingEntry.put("quantity", 1);
+            shippingEntry.put("price", Math.round(shippingAmount * 100));
+            products.add(shippingEntry);
+        }
+
         return products;
     }
 

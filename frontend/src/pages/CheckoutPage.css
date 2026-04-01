@@ -181,6 +181,119 @@
   top: 80px;
 }
 
+.shipping-sim-card {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface2);
+}
+
+.shipping-sim-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 1.5px;
+  color: var(--purple-light);
+  text-transform: uppercase;
+}
+
+.shipping-sim-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.shipping-source-chip {
+  font-size: 0.62rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  padding: 0.18rem 0.45rem;
+  color: var(--text-muted);
+}
+
+.shipping-source-chip.api {
+  color: #93c5fd;
+  border-color: rgba(147, 197, 253, 0.5);
+  background: rgba(59, 130, 246, 0.12);
+}
+
+.shipping-source-chip.local {
+  color: #facc15;
+  border-color: rgba(250, 204, 21, 0.5);
+  background: rgba(234, 179, 8, 0.12);
+}
+
+.shipping-sim-hint,
+.shipping-sim-note {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.shipping-sim-cep {
+  margin-top: 0.5rem;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+.shipping-options-grid {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.6rem;
+}
+
+.shipping-option {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.6rem 0.7rem;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s;
+  color: var(--text);
+}
+
+.shipping-option:hover {
+  border-color: var(--purple);
+}
+
+.shipping-option.selected {
+  border-color: var(--purple);
+  background: rgba(124, 58, 237, 0.12);
+}
+
+.shipping-option-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.shipping-option-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.shipping-option-price {
+  font-size: 0.78rem;
+  font-family: 'Orbitron', monospace;
+  color: var(--purple-light);
+}
+
+.shipping-option-meta {
+  display: block;
+  margin-top: 0.18rem;
+  font-size: 0.72rem;
+  color: var(--text-dim);
+}
+
+.shipping-option-meta.muted {
+  color: var(--text-muted);
+}
+
 .summary-item {
   display: flex;
   justify-content: space-between;
@@ -211,6 +324,11 @@
   padding: 1rem 0 0;
   margin-top: 0.5rem;
   border-top: 1px solid var(--border);
+}
+
+.summary-total-estimated {
+  margin-top: 0.3rem;
+  border-top-style: dashed;
 }
 
 .summary-total-label {

@@ -143,13 +143,33 @@ Arquivo: `src/main/resources/application-test.properties`
 ### JWT
 No `application.properties` existe:
 
-- `api.security.token.secret=${JWT_SECRET:my-secret-key}`
+- `api.security.token.secret=${JWT_SECRET:dev-jwt-change-me}`
 
 Ou seja:
 - se você setar `JWT_SECRET`, ele será usado
-- se não setar, cai no default `my-secret-key`
+- se não setar, cai no default de desenvolvimento `dev-jwt-change-me`
 
 > Em produção, sempre defina `JWT_SECRET`.
+
+### Segredos locais sem versionar
+O projeto importa automaticamente um arquivo opcional na raiz:
+
+- `local-secrets.properties` (ignorado pelo git)
+
+Use `local-secrets.properties.example` como base e preencha, por exemplo:
+
+- `DB_PASSWORD`
+- `ABACATEPAY_API_KEY`
+- `ABACATEPAY_WEBHOOK_SECRET`
+- `JWT_SECRET`
+
+### Arquivos .env para frontend/local
+Versione apenas arquivos de exemplo:
+
+- `.env.example`
+- `frontend/.env.example`
+
+Arquivos reais (`.env`, `.env.local`, `frontend/.env`, `frontend/.env.local`) ficam ignorados no git.
 
 ---
 

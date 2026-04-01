@@ -30,6 +30,10 @@ public class Order implements Serializable {
 
     private String abacatePayCheckoutUrl;
 
+    private Double shippingAmount;
+
+    private String shippingLabel;
+
     @ManyToOne
     @JoinColumn(name = "client_id")
     private User client;
@@ -86,6 +90,29 @@ public class Order implements Serializable {
 
     public void setAbacatePayCheckoutUrl(String abacatePayCheckoutUrl) {
         this.abacatePayCheckoutUrl = abacatePayCheckoutUrl;
+    }
+
+    public Double getShippingAmount() {
+        if (shippingAmount == null) {
+            return 0.0;
+        }
+        return Math.max(0.0, shippingAmount);
+    }
+
+    public void setShippingAmount(Double shippingAmount) {
+        if (shippingAmount == null) {
+            this.shippingAmount = 0.0;
+            return;
+        }
+        this.shippingAmount = Math.max(0.0, shippingAmount);
+    }
+
+    public String getShippingLabel() {
+        return shippingLabel;
+    }
+
+    public void setShippingLabel(String shippingLabel) {
+        this.shippingLabel = shippingLabel;
     }
 
     public Long getId() {
@@ -145,10 +172,18 @@ public class Order implements Serializable {
     }
 
     public Double getTotal() {
+        return getProductsTotal();
+    }
+
+    public Double getProductsTotal() {
         double sum = 0.0;
         for (OrderItem x : items) {
             sum += x.getSubTotal();
         }
         return sum;
+    }
+
+    public Double getGrandTotal() {
+        return getProductsTotal() + getShippingAmount();
     }
 }

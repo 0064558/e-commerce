@@ -43,6 +43,10 @@ function SuccessPage({ order, onContinue }) {
   }, [order, externalId]);
 
   const orderData = resolvedOrder;
+  const productsTotal = Number(orderData?.productsTotal ?? orderData?.total ?? orderData?.totalAmount ?? 0);
+  const shippingAmount = Number(orderData?.shippingAmount ?? 0);
+  const shippingLabel = orderData?.shippingLabel || 'Frete';
+  const grandTotal = Number(orderData?.grandTotal ?? (productsTotal + shippingAmount));
 
   return (
     <div className="page">
@@ -80,9 +84,19 @@ function SuccessPage({ order, onContinue }) {
                   <span className="summary-item-val">{formatCurrency(item.subTotal)}</span>
                 </div>
               ))}
+              <div className="summary-item">
+                <span className="summary-item-name">Subtotal dos produtos</span>
+                <span className="summary-item-val">{formatCurrency(productsTotal)}</span>
+              </div>
+              <div className="summary-item">
+                <span className="summary-item-name">{shippingLabel}</span>
+                <span className="summary-item-val">
+                  {shippingAmount === 0 ? 'Grátis' : formatCurrency(shippingAmount)}
+                </span>
+              </div>
               <div className="summary-total">
                 <span className="summary-total-label">Total</span>
-                <span className="summary-total-val">{formatCurrency(orderData.total || orderData.totalAmount)}</span>
+                <span className="summary-total-val">{formatCurrency(grandTotal)}</span>
               </div>
             </div>
           )}

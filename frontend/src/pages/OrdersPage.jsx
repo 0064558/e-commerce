@@ -10,7 +10,13 @@ function OrdersPage({ user }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [payingOrderId, setPayingOrderId] = useState(null);
   const isAdmin = user?.role === 'ADMIN';
+
+  const getProductsTotal = (order) => Number(order?.productsTotal ?? order?.total ?? order?.totalAmount ?? 0);
+  const getShippingAmount = (order) => Number(order?.shippingAmount ?? 0);
+  const getGrandTotal = (order) => Number(order?.grandTotal ?? (getProductsTotal(order) + getShippingAmount(order)));
+  const getShippingLabel = (order) => order?.shippingLabel || 'Frete';
 
   useEffect(() => {
     loadOrders();
@@ -30,15 +36,73 @@ function OrdersPage({ user }) {
     }
   };
 
-  const handlePayNow = (order, event) => {
+  const handlePayNow = async (order, event) => {
     if (event) {
       event.stopPropagation();
     }
-    if (!order?.checkoutUrl) {
-      setError('Checkout indisponível para este pedido.');
-      return;
+
+    setPayingOrderId(order?.id || null);
+    setError('');
+
+    try {
+      const statusValue = order?.orderStatus || order?.status;
+      const addressId = order?.address?.id || order?.shippingAddress?.id;
+      const canRefreshCheckout = !isAdmin && statusValue === 'WAITING_PAYMENT' && !!addressId;
+
+      let checkoutUrl = order?.checkoutUrl;
+
+      if (canRefreshCheckout) {
+        const hasOrderShipping = order?.shippingAmount != null || Boolean(order?.shippingLabel);
+        const refreshed = await api.createAbacatePayCheckout(
+          addressId,
+          hasOrderShipping
+            ? {
+                amount: getShippingAmount(order),
+                label: getShippingLabel(order),
+              }
+            : undefined
+        );
+        const refreshedOrder = refreshed?.order;
+        const refreshedUrl =
+          refreshed?.checkoutUrl ||
+          refreshedOrder?.checkoutUrl ||
+          refreshed?.url ||
+          refreshed?.paymentUrl;
+        if (refreshedUrl) {
+          checkoutUrl = refreshedUrl;
+          setOrders((prev) =>
+            prev.map((item) =>
+              item.id === order.id
+                ? {
+                    ...item,
+                    ...(refreshedOrder || {}),
+                    checkoutUrl: refreshedUrl,
+                  }
+                : item
+            )
+          );
+          setSelectedOrder((prev) =>
+            prev && prev.id === order.id
+              ? {
+                  ...prev,
+                  ...(refreshedOrder || {}),
+                  checkoutUrl: refreshedUrl,
+                }
+              : prev
+          );
+        }
+      }
+
+      if (!checkoutUrl) {
+        throw new Error('Checkout indisponível para este pedido.');
+      }
+
+      window.open(checkoutUrl, '_blank', 'noopener,noreferrer');
+    } catch (err) {
+      setError(err.message || 'Falha ao abrir checkout de pagamento.');
+    } finally {
+      setPayingOrderId(null);
     }
-    window.open(order.checkoutUrl, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -68,6 +132,8 @@ function OrdersPage({ user }) {
             orders.map((order) => (
               (() => {
                 const statusValue = order.orderStatus || order.status;
+                const shippingAmount = getShippingAmount(order);
+                const grandTotal = getGrandTotal(order);
                 return (
               <div
                 key={order.id}
@@ -98,7 +164,10 @@ function OrdersPage({ user }) {
                 <div className="order-footer">
                   <div>
                     <div className="order-total">
-                      {formatCurrency(order.total || order.totalAmount)}
+                      {formatCurrency(grandTotal)}
+                    </div>
+                    <div className="order-addr">
+                      {getShippingLabel(order)}: {shippingAmount === 0 ? 'Grátis' : formatCurrency(shippingAmount)}
                     </div>
                     {(order.address || order.shippingAddress) && (
                       <div className="order-addr">
@@ -111,15 +180,16 @@ function OrdersPage({ user }) {
                       className="btn btn-ghost order-pay-btn"
                       type="button"
                       onClick={(event) => handlePayNow(order, event)}
+                      disabled={payingOrderId === order.id}
                     >
-                      PAGAR AGORA
+                      {payingOrderId === order.id ? 'ATUALIZANDO...' : 'PAGAR AGORA'}
                     </button>
                   )}
                 </div>
 
                 {statusValue === 'CANCELED' && (
                   <div className="order-warning">
-                    Pedido cancelado por indisponibilidade de estoque. Se houve pagamento, entre em contato para estorno.
+                    Pedido cancelado ou indisponibilidade de estoque. Se houve pagamento, entre em contato para estorno.
                   </div>
                 )}
               </div>
@@ -134,6 +204,7 @@ function OrdersPage({ user }) {
             order={selectedOrder}
             onClose={() => setSelectedOrder(null)}
             onPayNow={handlePayNow}
+            payingOrderId={payingOrderId}
           />
         )}
       </div>
@@ -141,7 +212,12 @@ function OrdersPage({ user }) {
   );
 }
 
-function OrderDetailModal({ order, onClose, onPayNow }) {
+function OrderDetailModal({ order, onClose, onPayNow, payingOrderId }) {
+  const productsTotal = Number(order?.productsTotal ?? order?.total ?? order?.totalAmount ?? 0);
+  const shippingAmount = Number(order?.shippingAmount ?? 0);
+  const shippingLabel = order?.shippingLabel || 'Frete';
+  const grandTotal = Number(order?.grandTotal ?? (productsTotal + shippingAmount));
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
@@ -163,8 +239,13 @@ function OrderDetailModal({ order, onClose, onPayNow }) {
             </span>
           </div>
           {(order.orderStatus || order.status) === 'WAITING_PAYMENT' && order.checkoutUrl && (
-            <button className="btn btn-ghost order-pay-btn" type="button" onClick={() => onPayNow(order)}>
-              PAGAR AGORA
+            <button
+              className="btn btn-ghost order-pay-btn"
+              type="button"
+              onClick={() => onPayNow(order)}
+              disabled={payingOrderId === order.id}
+            >
+              {payingOrderId === order.id ? 'ATUALIZANDO...' : 'PAGAR AGORA'}
             </button>
           )}
           {order.orderStatus === 'CANCELED' && (
@@ -199,9 +280,17 @@ function OrderDetailModal({ order, onClose, onPayNow }) {
           <div className="divider" />
 
           <div className="info-detail">
+            <span className="info-label">Subtotal dos produtos:</span>
+            <span className="info-val mono">{formatCurrency(productsTotal)}</span>
+          </div>
+          <div className="info-detail">
+            <span className="info-label">{shippingLabel}:</span>
+            <span className="info-val mono">{shippingAmount === 0 ? 'Grátis' : formatCurrency(shippingAmount)}</span>
+          </div>
+          <div className="info-detail">
             <span className="info-label">Total:</span>
             <span className="info-val mono" style={{ fontSize: '1.1rem' }}>
-              {formatCurrency(order.total || order.totalAmount)}
+              {formatCurrency(grandTotal)}
             </span>
           </div>
 

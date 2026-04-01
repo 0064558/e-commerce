@@ -200,12 +200,56 @@ class APIService {
   }
 
   // Checkout endpoints
-  checkout(addressId) {
-    return this.post('/checkout', { addressId });
+  checkout(addressId, shipping) {
+    const payload = {
+      addressId,
+      shippingAmount: shipping?.amount,
+      shippingLabel: shipping?.label,
+    };
+    return this.post('/checkout', payload);
   }
 
-  createAbacatePayCheckout(addressId) {
-    return this.post('/checkout', { addressId });
+  createAbacatePayCheckout(addressId, shipping) {
+    const payload = {
+      addressId,
+      shippingAmount: shipping?.amount,
+      shippingLabel: shipping?.label,
+    };
+    return this.post('/checkout', payload);
+  }
+
+  async getShippingQuote(payload) {
+    const externalQuoteUrl = process.env.REACT_APP_SHIPPING_QUOTE_URL;
+
+    if (!externalQuoteUrl) {
+      return this.post('/shipping/quote', payload);
+    }
+
+    const headers = this.getHeaders();
+    const response = await fetch(externalQuoteUrl, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    });
+
+    const rawText = response.status === 204 ? '' : await response.text();
+    let parsed = null;
+    if (rawText) {
+      try {
+        parsed = JSON.parse(rawText);
+      } catch {
+        parsed = null;
+      }
+    }
+
+    if (!response.ok) {
+      const message = parsed?.message || parsed?.error || rawText || `Erro ${response.status}`;
+      const error = new Error(message);
+      error.status = response.status;
+      throw error;
+    }
+
+    return parsed ?? rawText ?? null;
   }
 
   // Orders endpoints
