@@ -4,6 +4,15 @@ import './LoginPage.css';
 import api from '../services/api';
 
 function LoginPage({ onLoginSuccess }) {
+  const getResetTokenFromQuery = () => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('resetToken') || '';
+    } catch {
+      return '';
+    }
+  };
+
   const isValidCpf = (value) => {
     const digits = (value || '').replace(/\D/g, '');
     if (digits.length !== 11) return false;
@@ -45,12 +54,22 @@ function LoginPage({ onLoginSuccess }) {
     }
     return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
   };
-  const [tab, setTab] = useState('login');
+  const [tab, setTab] = useState(() => (getResetTokenFromQuery() ? 'forgot' : 'login'));
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loginNotice, setLoginNotice] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [tokenFromLink, setTokenFromLink] = useState(() => getResetTokenFromQuery());
+  const [forgotToken, setForgotToken] = useState('');
+  const [forgotNewPassword, setForgotNewPassword] = useState('');
+  const [forgotConfirmPassword, setForgotConfirmPassword] = useState('');
+  const [forgotError, setForgotError] = useState('');
+  const [forgotSuccess, setForgotSuccess] = useState('');
+  const [isRequestingReset, setIsRequestingReset] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
 
   const [registerForm, setRegisterForm] = useState({
     name: '',
@@ -70,6 +89,18 @@ function LoginPage({ onLoginSuccess }) {
       sessionStorage.removeItem('login_notice');
     }
   }, []);
+
+  useEffect(() => {
+    const tokenFromQuery = getResetTokenFromQuery();
+    if (tokenFromQuery) {
+      setTab('forgot');
+      setTokenFromLink(tokenFromQuery);
+      setForgotToken(tokenFromQuery);
+      setForgotSuccess('Link de recuperação validado. Agora é só definir sua nova senha.');
+    }
+  }, []);
+
+  const activeResetToken = tokenFromLink || forgotToken;
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -107,6 +138,76 @@ function LoginPage({ onLoginSuccess }) {
     setError('');
     setRegisterError('');
     setRegisterSuccess('');
+    setForgotError('');
+    setForgotSuccess('');
+  };
+
+  const handleForgotPasswordRequest = async () => {
+    if (!forgotEmail) {
+      setForgotError('Informe seu e-mail para recuperação.');
+      return;
+    }
+
+    setForgotError('');
+    setForgotSuccess('');
+    setIsRequestingReset(true);
+
+    try {
+      await api.forgotPassword(forgotEmail);
+      setForgotSuccess(
+        'Se o e-mail estiver cadastrado, enviamos as instruções de recuperação para a caixa de entrada.'
+      );
+    } catch (err) {
+      setForgotError(err.message || 'Falha ao solicitar recuperação de senha.');
+    } finally {
+      setIsRequestingReset(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!activeResetToken) {
+      setForgotError('Token de recuperação ausente. Use o link enviado por e-mail.');
+      return;
+    }
+    if (!forgotNewPassword) {
+      setForgotError('Informe a nova senha.');
+      return;
+    }
+    if (forgotNewPassword !== forgotConfirmPassword) {
+      setForgotError('A confirmação da senha não confere.');
+      return;
+    }
+
+    setForgotError('');
+    setForgotSuccess('');
+    setIsResettingPassword(true);
+
+    try {
+      await api.resetPassword(activeResetToken, forgotNewPassword);
+      if (forgotEmail) {
+        setEmail(forgotEmail);
+      }
+      setPassword('');
+      setForgotToken('');
+      setTokenFromLink('');
+      setForgotNewPassword('');
+      setForgotConfirmPassword('');
+
+      try {
+        const current = new URL(window.location.href);
+        current.searchParams.delete('resetToken');
+        window.history.replaceState({}, document.title, `${current.pathname}${current.search}`);
+      } catch {
+        // noop
+      }
+
+      setLoginNotice('Senha redefinida com sucesso. Faça login com a nova senha.');
+      setTab('login');
+    } catch (err) {
+      setForgotError(err.message || 'Falha ao redefinir senha.');
+    } finally {
+      setIsResettingPassword(false);
+    }
   };
 
   const handleRegister = async (e) => {
@@ -169,6 +270,12 @@ function LoginPage({ onLoginSuccess }) {
           >
             Registrar
           </button>
+          <button
+            className={`tab ${tab === 'forgot' ? 'active' : ''}`}
+            onClick={() => handleTabChange('forgot')}
+          >
+            Recuperar
+          </button>
         </div>
 
         {tab === 'login' ? (
@@ -195,6 +302,11 @@ function LoginPage({ onLoginSuccess }) {
                 autoComplete="current-password"
               />
             </div>
+            <div className="login-inline-actions">
+              <button type="button" className="link-btn" onClick={() => handleTabChange('forgot')}>
+                Esqueci minha senha
+              </button>
+            </div>
             <button type="submit" className="btn" disabled={isLoading}>
               {isLoading ? (
                 <>
@@ -216,7 +328,7 @@ function LoginPage({ onLoginSuccess }) {
               )}
             </button>
           </form>
-        ) : (
+        ) : tab === 'register' ? (
           <form onSubmit={handleRegister}>
             <Alert type="error" message={registerError} />
             <Alert type="success" message={registerSuccess} />
@@ -303,6 +415,68 @@ function LoginPage({ onLoginSuccess }) {
               )}
             </button>
           </form>
+        ) : (
+          <div className="recovery-wrap">
+            <Alert type="error" message={forgotError} />
+            <Alert type="success" message={forgotSuccess} />
+
+            <div className="form-group">
+              <label>E-mail da conta</label>
+              <input
+                type="email"
+                value={forgotEmail}
+                onChange={(e) => setForgotEmail(e.target.value)}
+                placeholder="seu@email.com"
+                autoComplete="email"
+              />
+            </div>
+
+            <button type="button" className="btn" onClick={handleForgotPasswordRequest} disabled={isRequestingReset}>
+              {isRequestingReset ? 'Enviando...' : 'ENVIAR LINK DE RECUPERACAO'}
+            </button>
+
+            <div className="recovery-divider">
+              {tokenFromLink ? 'Link recebido por e-mail' : 'Depois, clique no link que chegar no seu e-mail'}
+            </div>
+
+            {!tokenFromLink && (
+              <div className="form-group">
+                <label>Token de recuperação</label>
+                <input
+                  value={forgotToken}
+                  onChange={(e) => setForgotToken(e.target.value)}
+                  placeholder="Cole aqui o token"
+                  autoComplete="off"
+                />
+              </div>
+            )}
+
+            <div className="form-group">
+              <label>Nova senha</label>
+              <input
+                type="password"
+                value={forgotNewPassword}
+                onChange={(e) => setForgotNewPassword(e.target.value)}
+                placeholder="••••••••"
+                autoComplete="new-password"
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Confirmar nova senha</label>
+              <input
+                type="password"
+                value={forgotConfirmPassword}
+                onChange={(e) => setForgotConfirmPassword(e.target.value)}
+                placeholder="••••••••"
+                autoComplete="new-password"
+              />
+            </div>
+
+            <button type="button" className="btn" onClick={handleResetPassword} disabled={isResettingPassword}>
+              {isResettingPassword ? 'Atualizando...' : 'ATUALIZAR SENHA'}
+            </button>
+          </div>
         )}
       </div>
     </div>

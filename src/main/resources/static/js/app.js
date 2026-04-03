@@ -114,6 +114,31 @@ function navigate(name, btn) {
 }
 
 // ── USUÁRIOS ────────────────────────────────────────────────
+let currentEditUserTaxId = ''
+
+function normalizeTaxId(value) {
+  return (value || '').trim()
+}
+
+function maskTaxId(value) {
+  const digits = (value || '').replace(/\D/g, '')
+  if (digits.length !== 11) return 'CPF não informado'
+  return `XXX.XXX.XXX-${digits.slice(9)}`
+}
+
+function setEditTaxId(value) {
+  currentEditUserTaxId = normalizeTaxId(value)
+  const input = document.getElementById('edit-taxid')
+  if (input) input.value = currentEditUserTaxId
+}
+
+function fetchUserTaxId(id) {
+  return apiFetch('/users/' + id)
+    .then(r => r.ok ? r.json() : null)
+    .then(user => normalizeTaxId(user?.taxId))
+    .catch(() => '')
+}
+
 function loadUsers() {
   showLoading('users-loading')
   apiFetch('/users')
@@ -136,12 +161,12 @@ function loadUsers() {
         item.innerHTML = `
           <div class="item-info">
             <div class="item-name">${user.name} ${roleTag}</div>
-            <div class="item-sub">${user.email} · ${user.phone}</div>
+            <div class="item-sub">${user.email} · ${user.phone || 'Sem telefone'} · CPF: ${maskTaxId(user.taxId)}</div>
           </div>
           <div style="display:flex;align-items:center;gap:8px">
             <span class="item-id">#${user.id}</span>
             <div class="item-actions">
-              <button class="btn-icon" onclick="openEdit(${user.id}, '${esc(user.name)}', '${esc(user.email)}', '${esc(user.phone)}')" title="Editar">✏</button>
+              <button class="btn-icon" onclick="openEdit(${user.id}, '${esc(user.name)}', '${esc(user.email)}', '${esc(user.phone)}', '${esc(user.taxId || '')}')" title="Editar">✏</button>
               <button class="btn-icon danger" onclick="openDelete(${user.id}, '${esc(user.name)}')" title="Deletar">✕</button>
             </div>
           </div>`
@@ -178,41 +203,93 @@ function createUser() {
     name:     document.getElementById('create-name').value.trim(),
     email:    document.getElementById('create-email').value.trim(),
     phone:    document.getElementById('create-phone').value.trim(),
+    taxId:    document.getElementById('create-taxid').value.trim(),
     password: document.getElementById('create-password').value,
     role:     document.getElementById('create-role').value
   }
-  if (!body.name || !body.email) { toast('Preencha nome e email', 'error'); return }
+  if (!body.name || !body.email || !body.taxId || !body.password) {
+    toast('Preencha nome, email, CPF e senha', 'error')
+    return
+  }
+
   apiFetch('/auth/register', { method: 'POST', body: JSON.stringify(body) })
-    .then(r => {
-      if (r.status === 400) throw new Error('Email já cadastrado')
-      if (!r.ok) throw new Error('Erro ao criar usuário')
+    .then(async r => {
+      const raw = await r.text()
+      const detail = (raw || '').trim()
+      const detailLower = detail.toLowerCase()
+
+      if (r.status === 400) {
+        if (detailLower.includes('already in use')) throw new Error('E-mail já cadastrado')
+        if (detail) throw new Error(detail)
+        throw new Error('Dados inválidos para criar usuário')
+      }
+
+      if (!r.ok) {
+        throw new Error(detail || 'Erro ao criar usuário')
+      }
+
       setRequestInfo('POST', '/auth/register', 200)
       closeModal('modal-create')
-      clearForm('create-name', 'create-email', 'create-phone', 'create-password')
+      clearForm('create-name', 'create-email', 'create-phone', 'create-taxid', 'create-password')
       toast(`Usuário "${body.name}" criado!`, 'success')
       loadUsers()
     })
     .catch(err => toast(err.message, 'error'))
 }
 
-function openEdit(id, name, email, phone) {
+function openEdit(id, name, email, phone, taxId) {
   document.getElementById('edit-id').value    = id
   document.getElementById('edit-name').value  = name
   document.getElementById('edit-email').value = email
   document.getElementById('edit-phone').value = phone
   document.getElementById('edit-badge').textContent = `PUT /users/${id}`
+  setEditTaxId(taxId)
+
+  // Garante CPF no payload do update quando a listagem não trouxer taxId.
+  if (!currentEditUserTaxId) {
+    fetchUserTaxId(id).then(setEditTaxId)
+  }
+
   openModal('modal-edit')
 }
 
 function updateUser() {
   const id   = document.getElementById('edit-id').value
-  const body = {
-    name:  document.getElementById('edit-name').value.trim(),
-    email: document.getElementById('edit-email').value.trim(),
-    phone: document.getElementById('edit-phone').value.trim()
-  }
-  apiFetch('/users/' + id, { method: 'PUT', body: JSON.stringify(body) })
-    .then(r => { if (!r.ok) throw new Error('Erro ao atualizar'); setRequestInfo('PUT', '/users/' + id, 200); return r.json() })
+
+  const name = document.getElementById('edit-name').value.trim()
+  const email = document.getElementById('edit-email').value.trim()
+  const phone = document.getElementById('edit-phone').value.trim()
+  const typedTaxId = normalizeTaxId(document.getElementById('edit-taxid')?.value)
+
+  const resolveTaxId = typedTaxId
+    ? Promise.resolve(typedTaxId)
+    : currentEditUserTaxId
+      ? Promise.resolve(currentEditUserTaxId)
+      : fetchUserTaxId(id)
+
+  resolveTaxId
+    .then(taxId => {
+      const finalTaxId = normalizeTaxId(taxId)
+      setEditTaxId(finalTaxId)
+
+      if (!finalTaxId) {
+        throw new Error('Informe o CPF para atualizar este usuário.')
+      }
+
+      const body = {
+        name,
+        email,
+        phone,
+        taxId: finalTaxId
+      }
+
+      return apiFetch('/users/' + id, { method: 'PUT', body: JSON.stringify(body) })
+    })
+    .then(r => {
+      if (!r.ok) throw new Error('Erro ao atualizar')
+      setRequestInfo('PUT', '/users/' + id, 200)
+      return r.json()
+    })
     .then(user => { closeModal('modal-edit'); toast(`"${user.name}" atualizado!`, 'success'); loadUsers() })
     .catch(err => toast(err.message, 'error'))
 }
@@ -239,7 +316,7 @@ function confirmDelete() {
 }
 
 // ── PEDIDOS ─────────────────────────────────────────────────
-// Agora usa OrderResponseDTO: { id, moment, orderStatus, clientEmail, clientName, items[], total, paymentMoment, address }
+// Agora usa OrderResponseDTO: { id, moment, orderStatus, clientEmail, clientName, items[], total, productsTotal, shippingAmount, shippingLabel, grandTotal, paymentMoment, address }
 // items[]: { productId, productName, productPrice, quantity, subTotal }
 function loadOrders() {
   showLoading('orders-loading')
@@ -264,7 +341,13 @@ function loadOrders() {
         const status   = statusMap[order.orderStatus] || { cls: 'tag-waiting', label: order.orderStatus }
         const payment  = order.paymentMoment ? 'Pago' : 'Pendente'
         const dateStr  = order.moment ? order.moment.slice(0, 10) : '—'
-        const total    = typeof order.total === 'number' ? order.total.toFixed(2) : '0.00'
+        const productsTotal = Number(order.productsTotal ?? order.total ?? order.totalAmount ?? 0)
+        const shippingAmount = Number(order.shippingAmount ?? 0)
+        const shippingLabel = order.shippingLabel || 'Frete'
+        const grandTotal = Number(order.grandTotal ?? (productsTotal + shippingAmount))
+        const productsTotalText = `R$ ${productsTotal.toFixed(2)}`
+        const shippingText = shippingAmount === 0 ? 'Grátis' : `R$ ${shippingAmount.toFixed(2)}`
+        const grandTotalText = `R$ ${grandTotal.toFixed(2)}`
         const client   = order.clientName || order.clientEmail || '—'
 
         const address  = order.address
@@ -279,13 +362,28 @@ function loadOrders() {
               </div>`).join('')
           : '<div class="order-item"><span style="color:var(--muted)">Sem itens</span></div>'
 
+        const summaryHtml = `
+          <div class="order-item">
+            <span>Subtotal dos produtos</span>
+            <span>${productsTotalText}</span>
+          </div>
+          <div class="order-item">
+            <span>${shippingLabel}</span>
+            <span>${shippingText}</span>
+          </div>
+          <div class="order-item" style="font-weight:700">
+            <span>Total</span>
+            <span>${grandTotalText}</span>
+          </div>`
+
         const item = document.createElement('li')
         item.style.cssText = 'flex-direction:column;align-items:flex-start;gap:10px'
         item.innerHTML = `
           <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
             <div class="item-info">
               <div class="item-name">Pedido #${order.id} — ${client}</div>
-              <div class="item-sub">Total: R$ ${total} · Pagamento: ${payment} · ${dateStr}</div>
+              <div class="item-sub">Total: ${grandTotalText} · Pagamento: ${payment} · ${dateStr}</div>
+              <div class="item-sub" style="margin-top:2px">Produtos: ${productsTotalText} · ${shippingLabel}: ${shippingText}</div>
               <div class="item-sub" style="margin-top:2px;font-size:11px;opacity:0.7">📍 ${address}</div>
             </div>
             <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
@@ -294,7 +392,7 @@ function loadOrders() {
               <button class="btn-icon danger" onclick="openDeleteOrder(${order.id})" title="Deletar">✕</button>
             </div>
           </div>
-          <div class="order-items-list">${itemsHtml}</div>`
+          <div class="order-items-list">${itemsHtml}${summaryHtml}</div>`
         list.appendChild(item)
       })
     })

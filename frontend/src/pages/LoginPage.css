@@ -96,6 +96,39 @@
   color: white;
 }
 
+.login-inline-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -0.3rem;
+  margin-bottom: 1rem;
+}
+
+.link-btn {
+  border: none;
+  background: transparent;
+  color: var(--purple-light);
+  font-size: 0.82rem;
+  cursor: pointer;
+  padding: 0;
+}
+
+.link-btn:hover {
+  text-decoration: underline;
+}
+
+.recovery-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.recovery-divider {
+  margin: 0.6rem 0 0.2rem;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  text-align: center;
+}
+
 .login-info-text {
   line-height: 1.6;
 }

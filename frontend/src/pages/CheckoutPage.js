@@ -474,6 +474,47 @@ function CheckoutPage({ cart, onBack, user }) {
                   <div className="address-form-panel">
                     <div className="section-title section-title-sm">Novo Endereço</div>
                     <div className="form-group">
+                      <label>CEP *</label>
+                      <input
+                        value={addressForm.zipCode}
+                        onChange={(event) =>
+                          setAddressForm((prev) => ({ ...prev, zipCode: formatCep(event.target.value) }))
+                        }
+                        placeholder="00000-000"
+                        inputMode="numeric"
+                        maxLength={9}
+                      />
+                      <div className="cep-actions">
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          type="button"
+                          onClick={handleCepLookup}
+                          disabled={isCepLoading}
+                        >
+                          {isCepLoading ? 'Buscando...' : 'Buscar CEP'}
+                        </button>
+                      </div>
+                    </div>
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Cidade *</label>
+                        <input
+                          value={addressForm.city}
+                          onChange={(event) => setAddressForm((prev) => ({ ...prev, city: event.target.value }))}
+                          placeholder="São Paulo"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Estado *</label>
+                        <input
+                          value={addressForm.state}
+                          onChange={(event) => setAddressForm((prev) => ({ ...prev, state: event.target.value.toUpperCase() }))}
+                          placeholder="SP"
+                          maxLength={2}
+                        />
+                      </div>
+                    </div>
+                    <div className="form-group">
                       <label>Rua / Logradouro *</label>
                       <input
                         value={addressForm.street}
@@ -506,47 +547,6 @@ function CheckoutPage({ cart, onBack, user }) {
                         onChange={(event) => setAddressForm((prev) => ({ ...prev, neighborhood: event.target.value }))}
                         placeholder="Centro"
                       />
-                    </div>
-                    <div className="form-row">
-                      <div className="form-group">
-                        <label>Cidade *</label>
-                        <input
-                          value={addressForm.city}
-                          onChange={(event) => setAddressForm((prev) => ({ ...prev, city: event.target.value }))}
-                          placeholder="São Paulo"
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label>Estado *</label>
-                        <input
-                          value={addressForm.state}
-                          onChange={(event) => setAddressForm((prev) => ({ ...prev, state: event.target.value.toUpperCase() }))}
-                          placeholder="SP"
-                          maxLength={2}
-                        />
-                      </div>
-                    </div>
-                    <div className="form-group">
-                      <label>CEP *</label>
-                      <input
-                        value={addressForm.zipCode}
-                        onChange={(event) =>
-                          setAddressForm((prev) => ({ ...prev, zipCode: formatCep(event.target.value) }))
-                        }
-                        placeholder="00000-000"
-                        inputMode="numeric"
-                        maxLength={9}
-                      />
-                      <div className="cep-actions">
-                        <button
-                          className="btn btn-ghost btn-sm"
-                          type="button"
-                          onClick={handleCepLookup}
-                          disabled={isCepLoading}
-                        >
-                          {isCepLoading ? 'Buscando...' : 'Buscar CEP'}
-                        </button>
-                      </div>
                     </div>
                     <button className="btn" onClick={handleSaveAddress} disabled={isSavingAddress}>
                       {isSavingAddress ? 'Salvando...' : 'SALVAR ENDEREÇO'}

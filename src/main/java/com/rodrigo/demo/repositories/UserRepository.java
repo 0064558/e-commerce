@@ -4,6 +4,8 @@ import com.rodrigo.demo.entities.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.util.Optional;
+
 /**
  * REPOSITORY - Camada de Acesso a Dados (Data Access Layer)
  *
@@ -29,4 +31,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // Exemplo: User findByEmail(String email);
     // O Spring Data JPA implementa automaticamente baseado no nome do método
     UserDetails findByEmail(String email);
+
+    Optional<User> findUserByEmailIgnoreCase(String email);
 }

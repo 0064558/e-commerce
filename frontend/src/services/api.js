@@ -10,11 +10,16 @@ class APIService {
     this.token = token;
   }
 
-  getHeaders(extra = {}) {
+  getHeaders(extra = {}, options = {}) {
+    const { includeAuth = true } = options;
     const headers = {
       'Content-Type': 'application/json',
       ...extra,
     };
+
+    if (!includeAuth) {
+      return headers;
+    }
 
     let token = this.token;
     if (!token) {
@@ -35,7 +40,15 @@ class APIService {
   }
 
   async request(method, path, body, allowRetry = true) {
-    const headers = this.getHeaders();
+    const authPublicPaths = [
+      '/auth/login',
+      '/auth/register',
+      '/auth/password/forgot',
+      '/auth/password/reset',
+    ];
+    const isAuthPublicRequest = authPublicPaths.includes(path);
+
+    const headers = this.getHeaders({}, { includeAuth: !isAuthPublicRequest });
     const response = await fetch(`${API_BASE}${path}`, {
       method,
       headers,
@@ -61,9 +74,8 @@ class APIService {
         message = rawText;
       }
 
-      const isAuthLoginRequest = path === '/auth/login' || path === '/auth/register';
       const hasAuthHeader = Boolean(headers.Authorization);
-      const isSessionUnauthorized = response.status === 401 && hasAuthHeader && !isAuthLoginRequest;
+      const isSessionUnauthorized = response.status === 401 && hasAuthHeader && !isAuthPublicRequest;
 
       if (isSessionUnauthorized && allowRetry) {
         let latestToken = null;
@@ -137,6 +149,14 @@ class APIService {
 
   register(user) {
     return this.post('/auth/register', user);
+  }
+
+  forgotPassword(email) {
+    return this.post('/auth/password/forgot', { email });
+  }
+
+  resetPassword(token, newPassword) {
+    return this.post('/auth/password/reset', { token, newPassword });
   }
 
   getMe() {

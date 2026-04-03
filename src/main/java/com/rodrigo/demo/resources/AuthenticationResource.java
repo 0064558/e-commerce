@@ -1,12 +1,15 @@
 package com.rodrigo.demo.resources;
 
 import com.rodrigo.demo.entities.records.AuthenticationDTO;
+import com.rodrigo.demo.entities.records.ForgotPasswordRequestDTO;
 import com.rodrigo.demo.entities.records.LoginResponseDTO;
+import com.rodrigo.demo.entities.records.ResetPasswordRequestDTO;
 import com.rodrigo.demo.entities.records.RegisterDTO;
 import com.rodrigo.demo.entities.User;
 import com.rodrigo.demo.entities.records.UserResponseDTO;
 import com.rodrigo.demo.infra.security.TokenService;
 import com.rodrigo.demo.repositories.UserRepository;
+import com.rodrigo.demo.services.PasswordResetService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -28,6 +31,9 @@ public class AuthenticationResource {
 
     @Autowired
     private TokenService tokenService;
+
+    @Autowired
+    private PasswordResetService passwordResetService;
 
     @PostMapping("/login")
     public ResponseEntity login(@RequestBody @Valid AuthenticationDTO data) {
@@ -54,6 +60,18 @@ public class AuthenticationResource {
         String encryptedPassword = new BCryptPasswordEncoder().encode(data.password());
         User user = new User(data.name(), data.email(), data.phone(), data.taxId(), encryptedPassword, data.role());
         this.repository.save(user);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/password/forgot")
+    public ResponseEntity forgotPassword(@RequestBody ForgotPasswordRequestDTO data) {
+        passwordResetService.requestReset(data.email());
+        return ResponseEntity.ok("Se o e-mail estiver cadastrado, enviaremos as instrucoes para redefinir a senha.");
+    }
+
+    @PostMapping("/password/reset")
+    public ResponseEntity resetPassword(@RequestBody ResetPasswordRequestDTO data) {
+        passwordResetService.resetPassword(data.token(), data.newPassword());
         return ResponseEntity.ok().build();
     }
 

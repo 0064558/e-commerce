@@ -36,8 +36,11 @@ public class SecurityConfiguration {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
+                    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/register").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/auth/password/forgot").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/auth/password/reset").permitAll()
                         .requestMatchers(HttpMethod.POST, "/webhooks/abacatepay").permitAll()
                         .requestMatchers(HttpMethod.GET, "/shipping/oauth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/oauth/callback").permitAll()
