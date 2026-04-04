@@ -104,19 +104,21 @@ public class AbacatePayService {
 
     private List<Map<String, Object>> buildProducts(Order order, double shippingAmount, String shippingLabel) {
         List<Map<String, Object>> products = new ArrayList<>();
+        int index = 0;
         for (OrderItem item : order.getItems()) {
             Map<String, Object> entry = new LinkedHashMap<>();
-            entry.put("externalId", String.valueOf(item.getProduct().getId()));
+            entry.put("externalId", buildItemExternalId(order, item, index));
             entry.put("name", item.getProduct().getName());
             entry.put("description", item.getProduct().getDescription() == null ? "" : item.getProduct().getDescription());
             entry.put("quantity", item.getQuantity());
-            entry.put("price", Math.round(item.getProduct().getPrice() * 100));
+            entry.put("price", resolveItemPriceInCents(item));
             products.add(entry);
+            index += 1;
         }
 
         if (shippingAmount > 0.0) {
             Map<String, Object> shippingEntry = new LinkedHashMap<>();
-            shippingEntry.put("externalId", "shipping");
+            shippingEntry.put("externalId", buildShippingExternalId(order, shippingAmount));
             shippingEntry.put("name", shippingLabel);
             shippingEntry.put("description", "Frete do pedido");
             shippingEntry.put("quantity", 1);
@@ -125,6 +127,27 @@ public class AbacatePayService {
         }
 
         return products;
+    }
+
+    private long resolveItemPriceInCents(OrderItem item) {
+        double snapshotPrice = item.getPrice() == null ? 0.0 : item.getPrice();
+        if (snapshotPrice <= 0.0 && item.getProduct() != null && item.getProduct().getPrice() != null) {
+            snapshotPrice = item.getProduct().getPrice();
+        }
+        return Math.round(Math.max(0.0, snapshotPrice) * 100);
+    }
+
+    private String buildItemExternalId(Order order, OrderItem item, int index) {
+        String orderExternalId = order.getExternalId() == null ? String.valueOf(order.getId()) : order.getExternalId();
+        Long productId = item.getProduct() == null ? null : item.getProduct().getId();
+        String productPart = productId == null ? "unknown" : String.valueOf(productId);
+        return "order-" + orderExternalId + "-product-" + productPart + "-idx-" + index;
+    }
+
+    private String buildShippingExternalId(Order order, double shippingAmount) {
+        String orderExternalId = order.getExternalId() == null ? String.valueOf(order.getId()) : order.getExternalId();
+        long shippingCents = Math.round(Math.max(0.0, shippingAmount) * 100);
+        return "order-" + orderExternalId + "-shipping-" + shippingCents;
     }
 
     private String extractCheckoutUrl(String body) {

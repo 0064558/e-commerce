@@ -47,6 +47,22 @@ function SuccessPage({ order, onContinue }) {
   const shippingAmount = Number(orderData?.shippingAmount ?? 0);
   const shippingLabel = orderData?.shippingLabel || 'Frete';
   const grandTotal = Number(orderData?.grandTotal ?? (productsTotal + shippingAmount));
+  const selectedAddress = orderData?.address || orderData?.shippingAddress || null;
+  const isOrderConfirmed =
+    Boolean(orderData?.paymentMoment) || ['PAID', 'SHIPPED', 'DELIVERED'].includes(orderData?.orderStatus);
+  const deliveryAddressText = selectedAddress
+    ? [
+        selectedAddress.street && `${selectedAddress.street}, ${selectedAddress.number || 's/n'}`,
+        selectedAddress.complement,
+        selectedAddress.neighborhood,
+        selectedAddress.city && selectedAddress.state
+          ? `${selectedAddress.city} - ${selectedAddress.state}`
+          : selectedAddress.city || selectedAddress.state,
+        selectedAddress.zipCode ? `CEP ${selectedAddress.zipCode}` : '',
+      ]
+        .filter(Boolean)
+        .join(' | ')
+    : '';
 
   return (
     <div className="page">
@@ -73,6 +89,16 @@ function SuccessPage({ order, onContinue }) {
           )}
           {orderData && !orderData.paymentMoment && (
             <Alert type="info" message={`Status: ${getStatusLabel(orderData.orderStatus)}`} />
+          )}
+          {orderData && isOrderConfirmed && (
+            <Alert
+              type="success"
+              message={
+                deliveryAddressText
+                  ? `Pedido confirmado. Seu produto será entregue no endereço selecionado: ${deliveryAddressText}.`
+                  : 'Pedido confirmado. Seu produto será entregue no endereço selecionado no checkout.'
+              }
+            />
           )}
 
           {orderData && (

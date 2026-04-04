@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
+import Footer from './components/Footer';
 import CartDrawer from './components/CartDrawer';
 import LoginPage from './pages/LoginPage';
 import ProductsPage from './pages/ProductsPage';
@@ -20,6 +21,7 @@ import './styles/global.css';
 import './styles/forms.css';
 import './pages/CheckoutPage.css';
 import './pages/OrdersPage.css';
+import './styles/redesign.css';
 import api from './services/api';
 
 function App() {
@@ -275,6 +277,8 @@ function App() {
         />
         <Route path="*" element={<Navigate to="/products" replace />} />
       </Routes>
+
+      <Footer />
 
       {isCartOpen && (
         <CartDrawer

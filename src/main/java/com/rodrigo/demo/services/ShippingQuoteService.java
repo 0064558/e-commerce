@@ -65,7 +65,7 @@ public class ShippingQuoteService {
             return new ShippingQuoteResponseDTO("api", melhorEnvioOptions);
         }
 
-        return new ShippingQuoteResponseDTO("simulado", buildCorreiosOptions(zipCode, orderTotal, itemCount));
+        return new ShippingQuoteResponseDTO("simulado", buildCorreiosOptions(zipCode, itemCount));
     }
 
     @SuppressWarnings("unchecked")
@@ -194,7 +194,7 @@ public class ShippingQuoteService {
         return normalized;
     }
 
-    private List<ShippingOptionDTO> buildCorreiosOptions(String zipCode, double orderTotal, int itemCount) {
+    private List<ShippingOptionDTO> buildCorreiosOptions(String zipCode, int itemCount) {
         double distanceKm = getDistanceInKm(originZipCode, zipCode);
         double weightFactor = 1 + Math.max(0, itemCount - 1) * 0.08;
         double distanceBase = 9.5 + (distanceKm * 0.022);
@@ -212,8 +212,6 @@ public class ShippingQuoteService {
             ? 8
             : 10;
 
-        boolean freePac = orderTotal >= 349.0;
-
         int pacMin = baseDays + 1;
         int pacMax = baseDays + 3;
 
@@ -224,8 +222,8 @@ public class ShippingQuoteService {
                 "correios-pac",
                 "Correios",
                 "PAC",
-                freePac ? "Correios PAC (frete grátis)" : "Correios PAC",
-                freePac ? 0.0 : roundPrice(Math.max(14.9, baseCost)),
+                "Correios PAC",
+                roundPrice(Math.max(14.9, baseCost)),
                 pacMin,
                 pacMax
         );

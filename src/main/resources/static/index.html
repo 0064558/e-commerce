@@ -16,7 +16,7 @@
       <div class="login-logo">
         <div class="logo-icon">S</div>
         <div>
-          <div class="logo-title">Shop Admin</div>
+          <div class="logo-title">Nexus Admin</div>
           <div class="logo-sub">Painel administrativo</div>
         </div>
       </div>
@@ -34,7 +34,7 @@
       <div class="logo">
         <div class="logo-icon">S</div>
         <div>
-          <div class="logo-title">Shop Admin</div>
+          <div class="logo-title">Nexus Admin</div>
           <div class="logo-sub">localhost:8080</div>
         </div>
       </div>
@@ -131,6 +131,15 @@
                 <h2>Pedidos</h2>
                 <span class="count-badge" id="orders-count">0</span>
               </div>
+            </div>
+            <div class="form-group" style="margin-bottom:8px">
+              <label for="orders-search">Pesquisar pedidos</label>
+              <input
+                type="text"
+                id="orders-search"
+                placeholder="Buscar por ID, cliente, e-mail, status, cidade ou CEP"
+                oninput="applyOrdersFilter(this.value)"
+              >
             </div>
             <div id="orders-loading" class="loading-state">
               <div class="spinner"></div><span>Carregando...</span>

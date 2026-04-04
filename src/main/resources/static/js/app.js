@@ -318,83 +318,139 @@ function confirmDelete() {
 // ── PEDIDOS ─────────────────────────────────────────────────
 // Agora usa OrderResponseDTO: { id, moment, orderStatus, clientEmail, clientName, items[], total, productsTotal, shippingAmount, shippingLabel, grandTotal, paymentMoment, address }
 // items[]: { productId, productName, productPrice, quantity, subTotal }
+let allOrders = []
+
+function normalizeSearch(value) {
+  return String(value || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+}
+
+function getOrderSearchText(order) {
+  const address = order?.address || {}
+  const itemNames = Array.isArray(order?.items)
+    ? order.items.map(i => i?.productName || '').join(' ')
+    : ''
+
+  return normalizeSearch([
+    order?.id,
+    order?.clientName,
+    order?.clientEmail,
+    order?.orderStatus,
+    address.street,
+    address.number,
+    address.neighborhood,
+    address.city,
+    address.state,
+    address.zipCode,
+    itemNames
+  ].join(' '))
+}
+
+function renderOrders(orders, totalCount = orders.length) {
+  const list = document.getElementById('orders-list')
+  list.innerHTML = ''
+
+  document.getElementById('orders-count').textContent =
+    orders.length === totalCount ? String(orders.length) : `${orders.length}/${totalCount}`
+
+  if (orders.length === 0) {
+    list.innerHTML = '<li style="justify-content:center;color:var(--muted2)">Nenhum pedido encontrado</li>'
+    return
+  }
+
+  const statusMap = {
+    PAID:            { cls: 'tag-paid',      label: 'Pago' },
+    WAITING_PAYMENT: { cls: 'tag-waiting',   label: 'Aguardando' },
+    SHIPPED:         { cls: 'tag-shipped',   label: 'Enviado' },
+    DELIVERED:       { cls: 'tag-delivered', label: 'Entregue' },
+    CANCELED:        { cls: 'tag-canceled',  label: 'Cancelado' }
+  }
+
+  orders.forEach(order => {
+    const status   = statusMap[order.orderStatus] || { cls: 'tag-waiting', label: order.orderStatus }
+    const payment  = order.paymentMoment ? 'Pago' : 'Pendente'
+    const dateStr  = order.moment ? order.moment.slice(0, 10) : '—'
+    const productsTotal = Number(order.productsTotal ?? order.total ?? order.totalAmount ?? 0)
+    const shippingAmount = Number(order.shippingAmount ?? 0)
+    const shippingLabel = order.shippingLabel || 'Frete'
+    const grandTotal = Number(order.grandTotal ?? (productsTotal + shippingAmount))
+    const productsTotalText = `R$ ${productsTotal.toFixed(2)}`
+    const shippingText = shippingAmount === 0 ? 'Grátis' : `R$ ${shippingAmount.toFixed(2)}`
+    const grandTotalText = `R$ ${grandTotal.toFixed(2)}`
+    const client   = order.clientName || order.clientEmail || '—'
+
+    const address  = order.address
+      ? `${order.address.street}, ${order.address.number} — ${order.address.city}/${order.address.state}`
+      : 'Sem endereço'
+
+    const itemsHtml = order.items && order.items.length > 0
+      ? order.items.map(i => `
+          <div class="order-item">
+            <span>${i.productName} <span style="color:var(--muted)">x${i.quantity}</span></span>
+            <span>R$ ${Number(i.subTotal || 0).toFixed(2)}</span>
+          </div>`).join('')
+      : '<div class="order-item"><span style="color:var(--muted)">Sem itens</span></div>'
+
+    const summaryHtml = `
+      <div class="order-item">
+        <span>Subtotal dos produtos</span>
+        <span>${productsTotalText}</span>
+      </div>
+      <div class="order-item">
+        <span>${shippingLabel}</span>
+        <span>${shippingText}</span>
+      </div>
+      <div class="order-item" style="font-weight:700">
+        <span>Total</span>
+        <span>${grandTotalText}</span>
+      </div>`
+
+    const item = document.createElement('li')
+    item.style.cssText = 'flex-direction:column;align-items:flex-start;gap:10px'
+    item.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
+        <div class="item-info">
+          <div class="item-name">Pedido #${order.id} — ${client}</div>
+          <div class="item-sub">Total: ${grandTotalText} · Pagamento: ${payment} · ${dateStr}</div>
+          <div class="item-sub" style="margin-top:2px">Produtos: ${productsTotalText} · ${shippingLabel}: ${shippingText}</div>
+          <div class="item-sub" style="margin-top:2px;font-size:11px;opacity:0.7">📍 ${address}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+          <span class="tag ${status.cls}">${status.label}</span>
+          <button class="btn-icon" onclick="openEditOrder(${order.id}, '${order.orderStatus}')" title="Atualizar status">✏</button>
+          <button class="btn-icon danger" onclick="openDeleteOrder(${order.id})" title="Deletar">✕</button>
+        </div>
+      </div>
+      <div class="order-items-list">${itemsHtml}${summaryHtml}</div>`
+    list.appendChild(item)
+  })
+}
+
+function applyOrdersFilter(term) {
+  const searchInput = document.getElementById('orders-search')
+  const query = normalizeSearch(term ?? searchInput?.value)
+
+  if (!query) {
+    renderOrders(allOrders, allOrders.length)
+    return
+  }
+
+  const filtered = allOrders.filter(order => getOrderSearchText(order).includes(query))
+  renderOrders(filtered, allOrders.length)
+}
+
 function loadOrders() {
   showLoading('orders-loading')
   apiFetch('/orders')
     .then(r => r.json())
     .then(orders => {
       hideLoading('orders-loading')
-      document.getElementById('orders-count').textContent = orders.length
       setRequestInfo('GET', '/orders', 200)
-      const list = document.getElementById('orders-list')
-      list.innerHTML = ''
-
-      const statusMap = {
-        PAID:            { cls: 'tag-paid',      label: 'Pago' },
-        WAITING_PAYMENT: { cls: 'tag-waiting',   label: 'Aguardando' },
-        SHIPPED:         { cls: 'tag-shipped',   label: 'Enviado' },
-        DELIVERED:       { cls: 'tag-delivered', label: 'Entregue' },
-        CANCELED:        { cls: 'tag-canceled',  label: 'Cancelado' }
-      }
-
-      orders.forEach(order => {
-        const status   = statusMap[order.orderStatus] || { cls: 'tag-waiting', label: order.orderStatus }
-        const payment  = order.paymentMoment ? 'Pago' : 'Pendente'
-        const dateStr  = order.moment ? order.moment.slice(0, 10) : '—'
-        const productsTotal = Number(order.productsTotal ?? order.total ?? order.totalAmount ?? 0)
-        const shippingAmount = Number(order.shippingAmount ?? 0)
-        const shippingLabel = order.shippingLabel || 'Frete'
-        const grandTotal = Number(order.grandTotal ?? (productsTotal + shippingAmount))
-        const productsTotalText = `R$ ${productsTotal.toFixed(2)}`
-        const shippingText = shippingAmount === 0 ? 'Grátis' : `R$ ${shippingAmount.toFixed(2)}`
-        const grandTotalText = `R$ ${grandTotal.toFixed(2)}`
-        const client   = order.clientName || order.clientEmail || '—'
-
-        const address  = order.address
-          ? `${order.address.street}, ${order.address.number} — ${order.address.city}/${order.address.state}`
-          : 'Sem endereço'
-
-        const itemsHtml = order.items && order.items.length > 0
-          ? order.items.map(i => `
-              <div class="order-item">
-                <span>${i.productName} <span style="color:var(--muted)">x${i.quantity}</span></span>
-                <span>R$ ${i.subTotal.toFixed(2)}</span>
-              </div>`).join('')
-          : '<div class="order-item"><span style="color:var(--muted)">Sem itens</span></div>'
-
-        const summaryHtml = `
-          <div class="order-item">
-            <span>Subtotal dos produtos</span>
-            <span>${productsTotalText}</span>
-          </div>
-          <div class="order-item">
-            <span>${shippingLabel}</span>
-            <span>${shippingText}</span>
-          </div>
-          <div class="order-item" style="font-weight:700">
-            <span>Total</span>
-            <span>${grandTotalText}</span>
-          </div>`
-
-        const item = document.createElement('li')
-        item.style.cssText = 'flex-direction:column;align-items:flex-start;gap:10px'
-        item.innerHTML = `
-          <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
-            <div class="item-info">
-              <div class="item-name">Pedido #${order.id} — ${client}</div>
-              <div class="item-sub">Total: ${grandTotalText} · Pagamento: ${payment} · ${dateStr}</div>
-              <div class="item-sub" style="margin-top:2px">Produtos: ${productsTotalText} · ${shippingLabel}: ${shippingText}</div>
-              <div class="item-sub" style="margin-top:2px;font-size:11px;opacity:0.7">📍 ${address}</div>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-              <span class="tag ${status.cls}">${status.label}</span>
-              <button class="btn-icon" onclick="openEditOrder(${order.id}, '${order.orderStatus}')" title="Atualizar status">✏</button>
-              <button class="btn-icon danger" onclick="openDeleteOrder(${order.id})" title="Deletar">✕</button>
-            </div>
-          </div>
-          <div class="order-items-list">${itemsHtml}${summaryHtml}</div>`
-        list.appendChild(item)
-      })
+      allOrders = Array.isArray(orders) ? orders : []
+      applyOrdersFilter()
     })
     .catch(err => { hideLoading('orders-loading'); toast(err.message, 'error') })
 }

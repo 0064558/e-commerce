@@ -179,10 +179,7 @@ public class CheckoutService {
         if (shippingLabel != null && !shippingLabel.isBlank()) {
             return shippingLabel.trim();
         }
-        if (shippingAmount > 0.0) {
-            return "Frete";
-        }
-        return "Frete grátis";
+        return "Frete";
     }
 
     @Transactional

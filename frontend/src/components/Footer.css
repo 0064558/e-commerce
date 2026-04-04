@@ -1,0 +1,93 @@
+.site-footer {
+  margin-top: 2.5rem;
+  border-top: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(15, 15, 26, 0.68), rgba(10, 10, 20, 0.92));
+  backdrop-filter: blur(10px);
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr;
+  gap: 1.5rem;
+  padding: 1.9rem 1.5rem 1.4rem;
+}
+
+.footer-brand {
+  font-family: 'Orbitron', monospace;
+  font-size: 1.3rem;
+  font-weight: 900;
+  letter-spacing: 3px;
+  background: linear-gradient(135deg, var(--purple-light), var(--purple-glow));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.footer-brand-text {
+  margin-top: 0.55rem;
+  color: var(--text-dim);
+  font-size: 0.84rem;
+  line-height: 1.45;
+  max-width: 440px;
+}
+
+.footer-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.73rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--purple-light);
+  margin-bottom: 0.6rem;
+}
+
+.footer-list {
+  list-style: none;
+  display: grid;
+  gap: 0.38rem;
+  color: var(--text-dim);
+  font-size: 0.82rem;
+}
+
+.footer-socials {
+  display: grid;
+  gap: 0.36rem;
+}
+
+.footer-socials a {
+  text-decoration: none;
+  color: var(--text-dim);
+  font-size: 0.82rem;
+  transition: color 0.2s;
+}
+
+.footer-socials a:hover {
+  color: var(--purple-glow);
+}
+
+.footer-bottom {
+  border-top: 1px solid var(--border);
+}
+
+.footer-bottom-inner {
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  color: var(--text-muted);
+  font-size: 0.74rem;
+}
+
+@media (max-width: 900px) {
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: 1.1rem;
+    padding-top: 1.5rem;
+  }
+
+  .footer-bottom-inner {
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 0.8rem 1.5rem;
+  }
+}

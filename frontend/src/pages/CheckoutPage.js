@@ -90,7 +90,7 @@ const normalizeShippingApiOptions = (rawOptions) => {
     .filter(Boolean);
 };
 
-const buildCorreiosSimulation = ({ zipCode, total, itemCount }) => {
+const buildCorreiosSimulation = ({ zipCode, itemCount }) => {
   const digits = (zipCode || '').replace(/\D/g, '');
   if (digits.length !== 8) {
     return [];
@@ -100,7 +100,6 @@ const buildCorreiosSimulation = ({ zipCode, total, itemCount }) => {
   const weightFactor = 1 + Math.max(0, itemCount - 1) * 0.08;
   const baseCost = (13.5 + itemCount * 1.45) * factor * weightFactor;
   const baseDays = factor <= 1.05 ? 2 : factor <= 1.2 ? 4 : factor <= 1.35 ? 6 : 8;
-  const hasFreePac = total >= 349;
   const sedexMin = Math.max(1, baseDays - 2);
   const sedexMax = Math.max(sedexMin, baseDays);
   const pacMin = baseDays + 1;
@@ -111,8 +110,8 @@ const buildCorreiosSimulation = ({ zipCode, total, itemCount }) => {
       id: 'correios-pac',
       carrier: 'Correios',
       service: 'PAC',
-      label: hasFreePac ? 'Correios PAC (frete grátis)' : 'Correios PAC',
-      price: hasFreePac ? 0 : roundPrice(Math.max(14.9, baseCost)),
+      label: 'Correios PAC',
+      price: roundPrice(Math.max(14.9, baseCost)),
       ...buildEta(pacMin, pacMax),
     },
     {
@@ -382,11 +381,11 @@ function CheckoutPage({ cart, onBack, user }) {
           return;
         }
 
-        setShippingOptions(buildCorreiosSimulation({ zipCode: digits, total, itemCount }));
+        setShippingOptions(buildCorreiosSimulation({ zipCode: digits, itemCount }));
         setShippingSource('simulado');
       } catch {
         if (!isActive) return;
-        setShippingOptions(buildCorreiosSimulation({ zipCode: digits, total, itemCount }));
+        setShippingOptions(buildCorreiosSimulation({ zipCode: digits, itemCount }));
         setShippingSource('simulado');
       } finally {
         if (isActive) {

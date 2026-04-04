@@ -268,13 +268,16 @@ function ProductsPage({ onAddToCart }) {
               </button>
             </div>
             <div className="featured-grid">
-              {featuredProducts.map((product) => (
+              {featuredProducts.map((product, index) => (
                 <div key={product.id} className="featured-card" onClick={() => handleCardOpen(product.id)}>
                   <div className="featured-img">
                     {product.imgUrl ? (
                       <img
                         src={product.imgUrl}
                         alt={product.name}
+                        loading={index === 0 ? 'eager' : 'lazy'}
+                        decoding="async"
+                        fetchPriority={index === 0 ? 'high' : 'low'}
                         onError={(e) => {
                           e.target.style.display = 'none';
                         }}
@@ -399,7 +402,7 @@ function ProductsPage({ onAddToCart }) {
           ) : (
             <>
               <div className="products-grid">
-                {pagedProducts.map((product) => (
+                {pagedProducts.map((product, index) => (
                   <div
                     key={product.id}
                     className="product-card"
@@ -417,6 +420,9 @@ function ProductsPage({ onAddToCart }) {
                         <img
                           src={product.imgUrl}
                           alt={product.name}
+                          loading={index < 4 ? 'eager' : 'lazy'}
+                          decoding="async"
+                          fetchPriority={index < 4 ? 'high' : 'low'}
                           onError={(e) => {
                             e.target.style.display = 'none';
                           }}
@@ -600,7 +606,13 @@ function ProductsPage({ onAddToCart }) {
             <div className="modal-grid">
               <div className="modal-img">
                 {quickViewProduct.imgUrl ? (
-                  <img src={quickViewProduct.imgUrl} alt={quickViewProduct.name} />
+                  <img
+                    src={quickViewProduct.imgUrl}
+                    alt={quickViewProduct.name}
+                    loading="lazy"
+                    decoding="async"
+                    fetchPriority="low"
+                  />
                 ) : (
                   <span className="product-img-placeholder">🛍️</span>
                 )}
