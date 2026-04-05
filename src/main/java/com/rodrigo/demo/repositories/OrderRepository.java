@@ -9,6 +9,8 @@ import java.util.Optional;
 public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findByClientEmail(String email);
 
+    boolean existsByClientId(Long clientId);
+
     Optional<Order> findByExternalId(String externalId);
 
     Optional<Order> findFirstByClientEmailAndOrderStatusOrderByMomentDesc(String email, Integer orderStatus);

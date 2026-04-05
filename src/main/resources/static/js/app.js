@@ -2,6 +2,21 @@
 function getToken() { return localStorage.getItem('token') }
 function getEmail() { return localStorage.getItem('userEmail') }
 
+function togglePasswordVisibility(inputId, button) {
+  const input = document.getElementById(inputId)
+  if (!input) return
+
+  const shouldShow = input.type === 'password'
+  input.type = shouldShow ? 'text' : 'password'
+
+  if (button) {
+    button.classList.toggle('is-visible', shouldShow)
+    const label = shouldShow ? 'Ocultar senha' : 'Mostrar senha'
+    button.setAttribute('aria-label', label)
+    button.setAttribute('title', label)
+  }
+}
+
 function apiFetch(url, options = {}) {
   if (!options.headers) options.headers = {}
   options.headers['Authorization'] = 'Bearer ' + getToken()
@@ -59,7 +74,17 @@ function doLogout() {
   localStorage.removeItem('userEmail')
   document.getElementById('app').style.display = 'none'
   document.getElementById('login-screen').style.display = 'flex'
-  document.getElementById('login-password').value = ''
+  const loginPasswordInput = document.getElementById('login-password')
+  if (loginPasswordInput) {
+    loginPasswordInput.value = ''
+    loginPasswordInput.type = 'password'
+  }
+  const loginPasswordToggle = document.querySelector('[data-target="login-password"]')
+  if (loginPasswordToggle) {
+    loginPasswordToggle.classList.remove('is-visible')
+    loginPasswordToggle.setAttribute('aria-label', 'Mostrar senha')
+    loginPasswordToggle.setAttribute('title', 'Mostrar senha')
+  }
   document.getElementById('login-error').textContent = ''
 }
 
@@ -303,10 +328,19 @@ function openDelete(id, name) {
 function confirmDelete() {
   const id = document.getElementById('delete-id').value
   apiFetch('/users/' + id, { method: 'DELETE' })
-    .then(r => {
+    .then(async r => {
       if (r.status === 404) throw new Error('Usuário não encontrado')
-      if (r.status === 400) throw new Error('Usuário possui pedidos e não pode ser deletado')
-      if (!r.ok) throw new Error('Erro ao deletar')
+      if (r.status === 400) {
+        let detail = ''
+        try {
+          const body = await r.json()
+          detail = body?.message || body?.error || ''
+        } catch {
+          detail = ''
+        }
+        throw new Error(detail || 'Usuário possui vínculos e não pode ser deletado')
+      }
+      if (!r.ok) throw new Error('Erro ao deletar usuário')
       setRequestInfo('DELETE', '/users/' + id, 204)
       closeModal('modal-delete')
       toast('Usuário deletado!', 'success')

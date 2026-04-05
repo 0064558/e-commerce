@@ -21,7 +21,31 @@
         </div>
       </div>
       <div class="form-group"><label>Email</label><input type="email" id="login-email" placeholder="admin@email.com"></div>
-      <div class="form-group"><label>Senha</label><input type="password" id="login-password" placeholder="••••••"></div>
+      <div class="form-group">
+        <label>Senha</label>
+        <div class="password-field">
+          <input type="password" id="login-password" placeholder="••••••">
+          <button
+            type="button"
+            class="password-toggle"
+            data-target="login-password"
+            aria-label="Mostrar senha"
+            title="Mostrar senha"
+            onclick="togglePasswordVisibility('login-password', this)"
+          >
+            <svg class="icon-eye" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+            <svg class="icon-eye-off" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a21.86 21.86 0 0 1 5.17-5.94"></path>
+              <path d="M1 1l22 22"></path>
+              <path d="M9.53 9.53A3.5 3.5 0 0 0 12 15.5a3.5 3.5 0 0 0 2.47-5.97"></path>
+              <path d="M14.47 14.47L9.53 9.53"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
       <div id="login-error" class="login-error"></div>
       <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px" onclick="doLogin()">Entrar</button>
     </div>
@@ -199,7 +223,31 @@
       <div class="form-group"><label>Email</label><input type="email" id="create-email" placeholder="maria@email.com"></div>
       <div class="form-group"><label>Telefone</label><input type="text" id="create-phone" placeholder="11999999999"></div>
       <div class="form-group"><label>CPF</label><input type="text" id="create-taxid" placeholder="000.000.000-00"></div>
-      <div class="form-group"><label>Senha</label><input type="password" id="create-password" placeholder="••••••"></div>
+      <div class="form-group">
+        <label>Senha</label>
+        <div class="password-field">
+          <input type="password" id="create-password" placeholder="••••••">
+          <button
+            type="button"
+            class="password-toggle"
+            data-target="create-password"
+            aria-label="Mostrar senha"
+            title="Mostrar senha"
+            onclick="togglePasswordVisibility('create-password', this)"
+          >
+            <svg class="icon-eye" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+            <svg class="icon-eye-off" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a21.86 21.86 0 0 1 5.17-5.94"></path>
+              <path d="M1 1l22 22"></path>
+              <path d="M9.53 9.53A3.5 3.5 0 0 0 12 15.5a3.5 3.5 0 0 0 2.47-5.97"></path>
+              <path d="M14.47 14.47L9.53 9.53"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
       <div class="form-group">
         <label>Perfil</label>
         <select id="create-role">

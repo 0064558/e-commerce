@@ -1,6 +1,9 @@
 package com.rodrigo.demo.services;
 
 import com.rodrigo.demo.entities.User;
+import com.rodrigo.demo.repositories.CartRepository;
+import com.rodrigo.demo.repositories.OrderRepository;
+import com.rodrigo.demo.repositories.PasswordResetTokenRepository;
 import com.rodrigo.demo.repositories.UserRepository;
 import com.rodrigo.demo.services.exceptions.DatabaseException;
 import com.rodrigo.demo.services.exceptions.ResourceNotFoundException;
@@ -9,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -46,6 +50,15 @@ public class UserService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private OrderRepository orderRepository;
+
+    @Autowired
+    private CartRepository cartRepository;
+
+    @Autowired
+    private PasswordResetTokenRepository passwordResetTokenRepository;
+
     /**
      * Busca todos os usuários cadastrados.
      *
@@ -75,15 +88,48 @@ public class UserService {
         return obj;
     }*/
 
+    @Transactional
     public void delete(Long id) {
         try {
             if (!repository.existsById(id)) {
                 throw new ResourceNotFoundException(id);
             }
+
+            if (orderRepository.existsByClientId(id)) {
+                throw new DatabaseException("Usuário possui pedidos e não pode ser deletado.");
+            }
+
+            if (passwordResetTokenRepository.existsByUser_Id(id)) {
+                passwordResetTokenRepository.deleteByUser_Id(id);
+            }
+
+            cartRepository.deleteByUserId(id);
             repository.deleteById(id);
         } catch (DataIntegrityViolationException e) {
-            throw new DatabaseException("User has orders and cannot be deleted");
+            throw new DatabaseException(resolveDeleteIntegrityMessage(e));
         }
+    }
+
+    private String resolveDeleteIntegrityMessage(DataIntegrityViolationException e) {
+        String message = e.getMostSpecificCause() != null
+                ? e.getMostSpecificCause().getMessage()
+                : e.getMessage();
+        String details = message == null ? "" : message.toLowerCase();
+
+        if (details.contains("tb_order") || details.contains("client_id")) {
+            return "Usuário possui pedidos e não pode ser deletado.";
+        }
+        if (details.contains("tb_cart") || details.contains("cart") || details.contains("user_id")) {
+            return "Usuário possui carrinho vinculado e não pôde ser deletado automaticamente.";
+        }
+        if (details.contains("tb_password_reset_token") || details.contains("password_reset")) {
+            return "Usuário possui tokens de recuperação vinculados e não pôde ser deletado automaticamente.";
+        }
+        if (details.contains("tb_address") || details.contains("address")) {
+            return "Usuário possui endereços vinculados e não pôde ser deletado automaticamente.";
+        }
+
+        return "Usuário possui vínculos no banco e não pode ser deletado.";
     }
 
     public User update(Long id, User obj) {
