@@ -141,6 +141,21 @@
   margin-top: 0.25rem;
 }
 
+.order-tracking {
+  font-size: 0.75rem;
+  color: var(--cyan);
+  margin-top: 0.25rem;
+}
+
+.order-tracking.pending {
+  color: var(--text-muted);
+}
+
+.order-tracking-code {
+  font-family: 'DM Mono', monospace;
+  letter-spacing: 0.4px;
+}
+
 /* Modal styles */
 .modal-overlay {
   position: fixed;

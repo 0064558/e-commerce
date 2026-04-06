@@ -34,6 +34,8 @@ public class Order implements Serializable {
 
     private String shippingLabel;
 
+    private String trackingCode;
+
     @ManyToOne
     @JoinColumn(name = "client_id")
     private User client;
@@ -113,6 +115,19 @@ public class Order implements Serializable {
 
     public void setShippingLabel(String shippingLabel) {
         this.shippingLabel = shippingLabel;
+    }
+
+    public String getTrackingCode() {
+        return trackingCode;
+    }
+
+    public void setTrackingCode(String trackingCode) {
+        if (trackingCode == null) {
+            this.trackingCode = null;
+            return;
+        }
+        String normalized = trackingCode.trim();
+        this.trackingCode = normalized.isEmpty() ? null : normalized;
     }
 
     public Long getId() {

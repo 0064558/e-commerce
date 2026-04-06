@@ -382,6 +382,10 @@
           <option value="CANCELED">Cancelado</option>
         </select>
       </div>
+      <div class="form-group" id="edit-order-tracking-group" style="display:none">
+        <label for="edit-order-tracking-code">Código de rastreio</label>
+        <input type="text" id="edit-order-tracking-code" placeholder="Ex: BR123456789" maxlength="120">
+      </div>
       <div class="modal-actions">
         <button class="btn btn-ghost" onclick="closeModal('modal-edit-order')">Cancelar</button>
         <button class="btn btn-warning" onclick="updateOrder()">Atualizar</button>

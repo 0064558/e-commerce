@@ -19,6 +19,7 @@ public record OrderResponseDTO(
     Double productsTotal,
     Double shippingAmount,
     String shippingLabel,
+    String trackingCode,
     Double grandTotal,
         Instant paymentMoment,
         AddressResponseDTO address
@@ -56,6 +57,7 @@ public record OrderResponseDTO(
                 order.getProductsTotal(),
                 order.getShippingAmount(),
                 order.getShippingLabel(),
+                order.getTrackingCode(),
                 order.getGrandTotal(),
                 order.getPayment() != null ? order.getPayment().getMoment() : null,
                 order.getAddress() != null ? AddressResponseDTO.from(order.getAddress()) : null

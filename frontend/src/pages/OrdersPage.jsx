@@ -17,6 +17,7 @@ function OrdersPage({ user }) {
   const getShippingAmount = (order) => Number(order?.shippingAmount ?? 0);
   const getGrandTotal = (order) => Number(order?.grandTotal ?? (getProductsTotal(order) + getShippingAmount(order)));
   const getShippingLabel = (order) => order?.shippingLabel || 'Frete';
+  const getTrackingCode = (order) => String(order?.trackingCode || '').trim();
 
   useEffect(() => {
     loadOrders();
@@ -134,6 +135,7 @@ function OrdersPage({ user }) {
                 const statusValue = order.orderStatus || order.status;
                 const shippingAmount = getShippingAmount(order);
                 const grandTotal = getGrandTotal(order);
+                const trackingCode = getTrackingCode(order);
                 return (
               <div
                 key={order.id}
@@ -172,6 +174,11 @@ function OrdersPage({ user }) {
                     {(order.address || order.shippingAddress) && (
                       <div className="order-addr">
                         {(order.address || order.shippingAddress).city}, {(order.address || order.shippingAddress).state}
+                      </div>
+                    )}
+                    {(statusValue === 'SHIPPED' || trackingCode) && (
+                      <div className={`order-tracking ${trackingCode ? '' : 'pending'}`}>
+                        Rastreio: <span className="order-tracking-code">{trackingCode || 'Aguardando código'}</span>
                       </div>
                     )}
                   </div>
@@ -213,9 +220,11 @@ function OrdersPage({ user }) {
 }
 
 function OrderDetailModal({ order, onClose, onPayNow, payingOrderId }) {
+  const statusValue = order?.orderStatus || order?.status;
   const productsTotal = Number(order?.productsTotal ?? order?.total ?? order?.totalAmount ?? 0);
   const shippingAmount = Number(order?.shippingAmount ?? 0);
   const shippingLabel = order?.shippingLabel || 'Frete';
+  const trackingCode = String(order?.trackingCode || '').trim();
   const grandTotal = Number(order?.grandTotal ?? (productsTotal + shippingAmount));
 
   return (
@@ -238,6 +247,14 @@ function OrderDetailModal({ order, onClose, onPayNow, payingOrderId }) {
               {getStatusLabel(order.orderStatus || order.status)}
             </span>
           </div>
+          {(statusValue === 'SHIPPED' || trackingCode) && (
+            <div className="info-detail">
+              <span className="info-label">Rastreio:</span>
+              <span className={`info-val mono ${trackingCode ? '' : 'text-muted'}`}>
+                {trackingCode || 'Aguardando código'}
+              </span>
+            </div>
+          )}
           {(order.orderStatus || order.status) === 'WAITING_PAYMENT' && order.checkoutUrl && (
             <button
               className="btn btn-ghost order-pay-btn"

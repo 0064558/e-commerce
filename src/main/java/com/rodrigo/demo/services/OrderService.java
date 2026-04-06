@@ -49,6 +49,7 @@ public class OrderService {
             }
             Order entity = repository.getReferenceById(id);
             entity.setOrderStatus(obj.getOrderStatus());
+            entity.setTrackingCode(obj.getTrackingCode());
             return repository.save(entity);
         } catch (EntityNotFoundException e) {
             throw new ResourceNotFoundException(id);

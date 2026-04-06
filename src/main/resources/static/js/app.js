@@ -350,7 +350,7 @@ function confirmDelete() {
 }
 
 // ── PEDIDOS ─────────────────────────────────────────────────
-// Agora usa OrderResponseDTO: { id, moment, orderStatus, clientEmail, clientName, items[], total, productsTotal, shippingAmount, shippingLabel, grandTotal, paymentMoment, address }
+// Agora usa OrderResponseDTO: { id, moment, orderStatus, clientEmail, clientName, items[], total, productsTotal, shippingAmount, shippingLabel, trackingCode, grandTotal, paymentMoment, address }
 // items[]: { productId, productName, productPrice, quantity, subTotal }
 let allOrders = []
 
@@ -379,6 +379,7 @@ function getOrderSearchText(order) {
     address.city,
     address.state,
     address.zipCode,
+    order?.trackingCode,
     itemNames
   ].join(' '))
 }
@@ -410,6 +411,7 @@ function renderOrders(orders, totalCount = orders.length) {
     const productsTotal = Number(order.productsTotal ?? order.total ?? order.totalAmount ?? 0)
     const shippingAmount = Number(order.shippingAmount ?? 0)
     const shippingLabel = order.shippingLabel || 'Frete'
+    const trackingCode = String(order.trackingCode || '').trim()
     const grandTotal = Number(order.grandTotal ?? (productsTotal + shippingAmount))
     const productsTotalText = `R$ ${productsTotal.toFixed(2)}`
     const shippingText = shippingAmount === 0 ? 'Grátis' : `R$ ${shippingAmount.toFixed(2)}`
@@ -442,6 +444,10 @@ function renderOrders(orders, totalCount = orders.length) {
         <span>${grandTotalText}</span>
       </div>`
 
+    const trackingHtml = trackingCode
+      ? `<div class="item-sub" style="margin-top:2px">Rastreio: <span class="item-id">${trackingCode}</span></div>`
+      : ''
+
     const item = document.createElement('li')
     item.style.cssText = 'flex-direction:column;align-items:flex-start;gap:10px'
     item.innerHTML = `
@@ -450,11 +456,12 @@ function renderOrders(orders, totalCount = orders.length) {
           <div class="item-name">Pedido #${order.id} — ${client}</div>
           <div class="item-sub">Total: ${grandTotalText} · Pagamento: ${payment} · ${dateStr}</div>
           <div class="item-sub" style="margin-top:2px">Produtos: ${productsTotalText} · ${shippingLabel}: ${shippingText}</div>
+          ${trackingHtml}
           <div class="item-sub" style="margin-top:2px;font-size:11px;opacity:0.7">📍 ${address}</div>
         </div>
         <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
           <span class="tag ${status.cls}">${status.label}</span>
-          <button class="btn-icon" onclick="openEditOrder(${order.id}, '${order.orderStatus}')" title="Atualizar status">✏</button>
+          <button class="btn-icon" onclick="openEditOrder(${order.id})" title="Atualizar status">✏</button>
           <button class="btn-icon danger" onclick="openDeleteOrder(${order.id})" title="Deletar">✕</button>
         </div>
       </div>
@@ -489,17 +496,47 @@ function loadOrders() {
     .catch(err => { hideLoading('orders-loading'); toast(err.message, 'error') })
 }
 
-function openEditOrder(id, currentStatus) {
+function toggleEditOrderTrackingField() {
+  const status = document.getElementById('edit-order-status')?.value
+  const trackingGroup = document.getElementById('edit-order-tracking-group')
+  const trackingInput = document.getElementById('edit-order-tracking-code')
+  if (!trackingGroup) return
+  if (trackingInput) {
+    trackingInput.required = status === 'SHIPPED'
+  }
+  trackingGroup.style.display = status === 'SHIPPED' ? 'flex' : 'none'
+}
+
+function openEditOrder(id) {
+  const order = allOrders.find(item => String(item.id) === String(id)) || {}
+  const currentStatus = order.orderStatus || 'WAITING_PAYMENT'
+  const currentTrackingCode = String(order.trackingCode || '').trim()
+
   document.getElementById('edit-order-id').value          = id
   document.getElementById('edit-order-status').value      = currentStatus
+  document.getElementById('edit-order-tracking-code').value = currentTrackingCode
   document.getElementById('edit-order-badge').textContent = `PUT /orders/${id}`
+  toggleEditOrderTrackingField()
   openModal('modal-edit-order')
 }
 
 function updateOrder() {
   const id     = document.getElementById('edit-order-id').value
   const status = document.getElementById('edit-order-status').value
-  apiFetch('/orders/' + id, { method: 'PUT', body: JSON.stringify({ orderStatus: status }) })
+  const trackingCode = document.getElementById('edit-order-tracking-code').value.trim()
+
+  if (status === 'SHIPPED' && !trackingCode) {
+    toast('Informe o código de rastreio para marcar o pedido como Enviado.', 'error')
+    return
+  }
+
+  apiFetch('/orders/' + id, {
+    method: 'PUT',
+    body: JSON.stringify({
+      orderStatus: status,
+      trackingCode: trackingCode || null
+    })
+  })
     .then(r => { if (!r.ok) throw new Error('Erro ao atualizar pedido'); return r.json() })
     .then(() => { closeModal('modal-edit-order'); toast('Status atualizado!', 'success'); loadOrders() })
     .catch(err => toast(err.message, 'error'))
@@ -760,3 +797,9 @@ function toast(msg, type = 'info') {
 document.querySelectorAll('.modal-overlay').forEach(overlay => {
   overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open') })
 })
+
+const editOrderStatusInput = document.getElementById('edit-order-status')
+if (editOrderStatusInput) {
+  editOrderStatusInput.addEventListener('change', toggleEditOrderTrackingField)
+  toggleEditOrderTrackingField()
+}
