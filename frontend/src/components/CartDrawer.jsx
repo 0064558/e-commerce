@@ -3,6 +3,24 @@ import { formatCurrency } from '../utils/helpers';
 import Spinner from './Spinner';
 import './CartDrawer.css';
 
+function EmptyCartIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="9" cy="20" r="1.6" />
+      <circle cx="18" cy="20" r="1.6" />
+      <path d="M3 4h2l2.4 11.2a1 1 0 0 0 1 .8h9.4a1 1 0 0 0 1-.8L21 8H7" />
+    </svg>
+  );
+}
+
 function CartDrawer({
   cart,
   onClose,
@@ -30,7 +48,7 @@ function CartDrawer({
             <Spinner text="Carregando..." />
           ) : items.length === 0 ? (
             <div className="cart-empty">
-              <div className="cart-empty-icon">🛒</div>
+              <div className="cart-empty-icon"><EmptyCartIcon /></div>
               <div>Carrinho vazio</div>
               <div className="fs-sm text-muted mt-1">
                 Adicione produtos para começar
