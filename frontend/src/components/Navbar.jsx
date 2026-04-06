@@ -40,8 +40,6 @@ function Navbar({ user, onLogout, cartCount, onCartOpen, currentPage, onNavigate
     onLogout();
   };
 
-  if (!user) return null;
-
   return (
     <nav className="navbar">
       <div className="nav-left">
@@ -92,50 +90,62 @@ function Navbar({ user, onLogout, cartCount, onCartOpen, currentPage, onNavigate
           {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
         </button>
 
-        <button
-          className={`user-chip user-menu-trigger ${isUserMenuOpen ? 'open' : ''}`}
-          type="button"
-          onClick={() => setIsUserMenuOpen((prev) => !prev)}
-          aria-expanded={isUserMenuOpen}
-          aria-haspopup="menu"
-        >
-          <span className="user-chip-icon">👤</span>
-          <span className="user-chip-name">{user.name?.split(' ')[0]}</span>
-          <span className="user-chip-hamburger">☰</span>
-        </button>
+        {user ? (
+          <>
+            <button
+              className={`user-chip user-menu-trigger ${isUserMenuOpen ? 'open' : ''}`}
+              type="button"
+              onClick={() => setIsUserMenuOpen((prev) => !prev)}
+              aria-expanded={isUserMenuOpen}
+              aria-haspopup="menu"
+            >
+              <span className="user-chip-icon">👤</span>
+              <span className="user-chip-name">{user.name?.split(' ')[0]}</span>
+              <span className="user-chip-hamburger">☰</span>
+            </button>
 
-        {isUserMenuOpen && (
-          <div className="user-menu-dropdown" role="menu">
-            <button
-              className={`user-menu-item ${currentPage === 'orders' ? 'active' : ''}`}
-              type="button"
-              onClick={() => handleUserMenuNavigate('orders')}
-            >
-              Pedidos
-            </button>
-            <button
-              className={`user-menu-item ${currentPage === 'addresses' ? 'active' : ''}`}
-              type="button"
-              onClick={() => handleUserMenuNavigate('addresses')}
-            >
-              Endereços
-            </button>
-            <button
-              className={`user-menu-item ${currentPage === 'profile' ? 'active' : ''}`}
-              type="button"
-              onClick={() => handleUserMenuNavigate('profile')}
-            >
-              Perfil
-            </button>
-            <div className="user-menu-separator" />
-            <button
-              className="user-menu-item danger"
-              type="button"
-              onClick={handleLogoutClick}
-            >
-              Sair
-            </button>
-          </div>
+            {isUserMenuOpen && (
+              <div className="user-menu-dropdown" role="menu">
+                <button
+                  className={`user-menu-item ${currentPage === 'orders' ? 'active' : ''}`}
+                  type="button"
+                  onClick={() => handleUserMenuNavigate('orders')}
+                >
+                  Pedidos
+                </button>
+                <button
+                  className={`user-menu-item ${currentPage === 'addresses' ? 'active' : ''}`}
+                  type="button"
+                  onClick={() => handleUserMenuNavigate('addresses')}
+                >
+                  Endereços
+                </button>
+                <button
+                  className={`user-menu-item ${currentPage === 'profile' ? 'active' : ''}`}
+                  type="button"
+                  onClick={() => handleUserMenuNavigate('profile')}
+                >
+                  Perfil
+                </button>
+                <div className="user-menu-separator" />
+                <button
+                  className="user-menu-item danger"
+                  type="button"
+                  onClick={handleLogoutClick}
+                >
+                  Sair
+                </button>
+              </div>
+            )}
+          </>
+        ) : (
+          <button
+            className="nav-btn nav-login-pill"
+            type="button"
+            onClick={() => onNavigate('login')}
+          >
+            Entrar
+          </button>
         )}
       </div>
     </nav>

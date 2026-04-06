@@ -165,6 +165,20 @@
   font-size: 0.8rem;
 }
 
+.nav-login-pill {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  text-transform: none;
+  letter-spacing: 0.4px;
+  padding: 0.4rem 0.95rem;
+  color: var(--purple-light);
+}
+
+.nav-login-pill:hover {
+  border-color: var(--purple);
+  background: rgba(124, 58, 237, 0.18);
+}
+
 .user-chip {
   border: 1px solid var(--border);
   background: var(--surface2);
@@ -311,6 +325,11 @@
     padding: 0.35rem 0.62rem;
     font-size: 0.72rem;
     letter-spacing: 0.5px;
+  }
+
+  .nav-login-pill {
+    padding: 0.34rem 0.66rem;
+    font-size: 0.72rem;
   }
 
   .user-chip-name {
