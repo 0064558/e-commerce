@@ -37,6 +37,7 @@
   font-weight: 900;
   font-size: 1.4rem;
   background: linear-gradient(135deg, var(--purple-light), var(--purple-glow));
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   cursor: pointer;
@@ -91,31 +92,6 @@
   color: var(--purple-glow);
 }
 
-.nav-home-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.42rem;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 0.42rem 0.9rem;
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.nav-home-pill:hover {
-  border-color: var(--purple);
-}
-
-.nav-home-pill.active {
-  border-color: var(--purple);
-  background: rgba(124, 58, 237, 0.16);
-}
-
-.catalog-icon {
-  display: inline-flex;
-  font-size: 0.82rem;
-  line-height: 1;
-  opacity: 0.9;
-}
 
 .cart-btn {
   position: relative;
@@ -175,6 +151,23 @@
   gap: 0.6rem;
 }
 
+.login-cta-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.login-cta-text {
+  color: var(--text-muted);
+  font-family: 'Exo 2', sans-serif;
+  font-size: 0.73rem;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  max-width: 190px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .cart-side-btn {
   width: 42px;
   height: 42px;
@@ -220,6 +213,17 @@
   gap: 0.45rem;
   cursor: pointer;
   transition: all 0.2s;
+}
+
+.user-greeting {
+  font-family: 'Exo 2', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  max-width: 145px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .user-menu-trigger.icon-only {
@@ -341,14 +345,6 @@
     padding: 0.35rem 0.6rem;
   }
 
-  .nav-home-pill {
-    padding: 0.34rem 0.65rem;
-    gap: 0.35rem;
-  }
-
-  .catalog-icon {
-    font-size: 0.72rem;
-  }
 
   .cart-btn {
     font-size: 0.75rem;
@@ -366,6 +362,16 @@
   .nav-login-pill {
     padding: 0.34rem 0.66rem;
     font-size: 0.72rem;
+  }
+
+  .login-cta-text {
+    max-width: 90px;
+    font-size: 0.66rem;
+  }
+
+  .user-greeting {
+    max-width: 80px;
+    font-size: 0.69rem;
   }
 
   .nav-login-pill.icon-only,

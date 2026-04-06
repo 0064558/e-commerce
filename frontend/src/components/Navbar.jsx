@@ -38,9 +38,11 @@ function UserIcon({ className = '' }) {
   );
 }
 
+
 function Navbar({ user, onLogout, cartCount, onCartOpen, currentPage, onNavigate }) {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef(null);
+  const firstName = user?.name?.trim()?.split(/\s+/)[0] || 'Cliente';
 
   useEffect(() => {
     const handleOutsideClick = (event) => {
@@ -83,13 +85,7 @@ function Navbar({ user, onLogout, cartCount, onCartOpen, currentPage, onNavigate
         <div className="nav-logo" onClick={() => onNavigate('products')}>
           NEXUS
         </div>
-        <button
-          className={`nav-btn nav-home-pill ${currentPage === 'products' ? 'active' : ''}`}
-          onClick={() => onNavigate('products')}
-        >
-          <span className="catalog-icon" aria-hidden="true">▦</span>
-          Home
-        </button>
+        
       </div>
 
       <div className="nav-center">
@@ -136,7 +132,7 @@ function Navbar({ user, onLogout, cartCount, onCartOpen, currentPage, onNavigate
         {user ? (
           <>
             <button
-              className={`user-chip user-menu-trigger icon-only ${isUserMenuOpen ? 'open' : ''}`}
+              className={`user-chip user-menu-trigger ${isUserMenuOpen ? 'open' : ''}`}
               type="button"
               onClick={() => setIsUserMenuOpen((prev) => !prev)}
               aria-expanded={isUserMenuOpen}
@@ -145,6 +141,7 @@ function Navbar({ user, onLogout, cartCount, onCartOpen, currentPage, onNavigate
               title="Menu do usuário"
             >
               <UserIcon className="nav-icon-svg" />
+              <span className="user-greeting">Olá, {firstName}</span>
             </button>
 
             {isUserMenuOpen && (
@@ -182,15 +179,17 @@ function Navbar({ user, onLogout, cartCount, onCartOpen, currentPage, onNavigate
             )}
           </>
         ) : (
-          <button
-            className="nav-btn nav-login-pill icon-only"
-            type="button"
-            onClick={() => onNavigate('login')}
-            aria-label="Entrar"
-            title="Entrar"
-          >
-            <UserIcon className="nav-icon-svg" />
-          </button>
+          <div className="login-cta-wrap">
+            <button
+              className="nav-btn nav-login-pill icon-only"
+              type="button"
+              onClick={() => onNavigate('login')}
+              aria-label="Entrar"
+              title="Entrar"
+            >
+              <UserIcon className="nav-icon-svg" />
+            </button>
+          </div>
         )}
       </div>
     </nav>
