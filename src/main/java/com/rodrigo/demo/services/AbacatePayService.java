@@ -10,6 +10,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import tools.jackson.databind.ObjectMapper;
 
@@ -69,7 +71,14 @@ public class AbacatePayService {
         payload.put("completionUrl", completionWithExternal);
         payload.put("allowCoupons", false);
         payload.put("externalId", order.getExternalId());
-        payload.put("metadata", Map.of("orderId", order.getId(), "externalId", order.getExternalId()));
+        Map<String, String> metadata = new LinkedHashMap<>();
+        if (order.getId() != null) {
+            metadata.put("orderId", String.valueOf(order.getId()));
+        }
+        if (order.getExternalId() != null && !order.getExternalId().isBlank()) {
+            metadata.put("externalId", order.getExternalId());
+        }
+        payload.put("metadata", metadata);
         Map<String, Object> customer = new LinkedHashMap<>();
         customer.put("name", customerUser.getName());
         customer.put("email", customerUser.getEmail());
@@ -86,11 +95,31 @@ public class AbacatePayService {
         headers.set("X-API-KEY", apiKey);
 
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(payload, headers);
-        ResponseEntity<String> response = restTemplate.postForEntity(
-                baseUrl + "/billing/create",
-                request,
-                String.class
-        );
+        ResponseEntity<String> response;
+        try {
+            response = postBillingRequest(request);
+        } catch (HttpStatusCodeException ex) {
+            String details = extractAbacateError(ex.getResponseBodyAsString());
+            boolean metadataRejected = ex.getStatusCode().value() == 422
+                    && details.toLowerCase().contains("metadata")
+                    && payload.containsKey("metadata");
+
+            if (metadataRejected) {
+                payload.remove("metadata");
+                try {
+                    response = postBillingRequest(new HttpEntity<>(payload, headers));
+                } catch (HttpStatusCodeException retryEx) {
+                    String retryDetails = extractAbacateError(retryEx.getResponseBodyAsString());
+                    throw new IllegalStateException("Falha ao criar cobranca no AbacatePay: " + retryDetails);
+                } catch (RestClientException retryEx) {
+                    throw new IllegalStateException("Falha ao comunicar com AbacatePay.");
+                }
+            } else {
+                throw new IllegalStateException("Falha ao criar cobranca no AbacatePay: " + details);
+            }
+        } catch (RestClientException ex) {
+            throw new IllegalStateException("Falha ao comunicar com AbacatePay.");
+        }
 
         if (!response.getStatusCode().is2xxSuccessful()) {
             throw new IllegalStateException("Falha ao criar cobranca no AbacatePay.");
@@ -195,6 +224,52 @@ public class AbacatePayService {
             return matcher.group(1);
         }
         return null;
+    }
+
+    private String extractAbacateError(String body) {
+        if (!hasText(body)) {
+            return "resposta vazia da API.";
+        }
+
+        try {
+            Map<?, ?> root = new ObjectMapper().readValue(body, Map.class);
+
+            String error = getString(root, "error");
+            if (hasText(error)) {
+                return error;
+            }
+
+            String message = getString(root, "message");
+            if (hasText(message)) {
+                return message;
+            }
+
+            String nestedError = getNestedString(root, "data", "error");
+            if (hasText(nestedError)) {
+                return nestedError;
+            }
+
+            String nestedMessage = getNestedString(root, "data", "message");
+            if (hasText(nestedMessage)) {
+                return nestedMessage;
+            }
+        } catch (Exception ignored) {
+            // usa fallback textual abaixo
+        }
+
+        String compact = body.replaceAll("\\s+", " ").trim();
+        if (compact.length() > 220) {
+            return compact.substring(0, 220) + "...";
+        }
+        return compact;
+    }
+
+    private ResponseEntity<String> postBillingRequest(HttpEntity<Map<String, Object>> request) {
+        return restTemplate.postForEntity(
+                baseUrl + "/billing/create",
+                request,
+                String.class
+        );
     }
 
     private String extractCheckoutUrlFromJson(String body) {
