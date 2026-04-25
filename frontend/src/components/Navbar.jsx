@@ -167,6 +167,15 @@ function Navbar({ user, onLogout, cartCount, onCartOpen, currentPage, onNavigate
                 >
                   Perfil
                 </button>
+                {user?.role === 'ADMIN' && (
+                  <button
+                    className={`user-menu-item ${currentPage === 'admin' ? 'active' : ''}`}
+                    type="button"
+                    onClick={() => handleUserMenuNavigate('admin')}
+                  >
+                    Painel Admin
+                  </button>
+                )}
                 <div className="user-menu-separator" />
                 <button
                   className="user-menu-item danger"

@@ -77,8 +77,26 @@ jest.mock('./pages/LoginPage', () => ({
       >
         mock-login-success
       </button>
+      <button
+        type="button"
+        onClick={() =>
+          onLoginSuccess('token-admin', {
+            id: 2,
+            name: 'Admin Teste',
+            role: 'ADMIN',
+            taxId: '12345678901',
+          })
+        }
+      >
+        mock-login-admin-success
+      </button>
     </div>
   ),
+}));
+
+jest.mock('./pages/AdminPanelPage', () => ({
+  __esModule: true,
+  default: () => <div>admin-page</div>,
 }));
 
 jest.mock('./pages/ProductsPage', () => ({
@@ -210,5 +228,18 @@ describe('Fluxo de redirect pos-login', () => {
     });
 
     expect(api.addToCart).toHaveBeenCalledWith(10, 2);
+  });
+
+  it('deve redirecionar ADMIN para o painel admin após login', async () => {
+    renderApp('/login');
+    const user = userEvent.setup();
+
+    expect(await screen.findByText('login-page')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'mock-login-admin-success' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('admin-page')).toBeInTheDocument();
+    });
   });
 });

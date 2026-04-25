@@ -16,6 +16,7 @@ import AboutPage from './pages/AboutPage';
 import ReturnsPage from './pages/ReturnsPage';
 import ShippingPage from './pages/ShippingPage';
 import SecurityPage from './pages/SecurityPage';
+import AdminPanelPage from './pages/AdminPanelPage';
 import Alert from './components/Alert';
 import Spinner from './components/Spinner';
 import './styles/global.css';
@@ -27,7 +28,7 @@ import api from './services/api';
 
 const GUEST_CART_KEY = 'guest_cart';
 const POST_LOGIN_REDIRECT_KEY = 'post_login_redirect';
-const ALLOWED_POST_LOGIN_REDIRECTS = new Set(['/checkout', '/orders', '/addresses', '/profile']);
+const ALLOWED_POST_LOGIN_REDIRECTS = new Set(['/checkout', '/orders', '/addresses', '/profile', '/admin']);
 
 const roundPrice = (value) => Math.round((Number(value) || 0) * 100) / 100;
 
@@ -144,6 +145,7 @@ function App() {
     '/orders': 'orders',
     '/addresses': 'addresses',
     '/profile': 'profile',
+    '/admin': 'admin',
     '/checkout': 'checkout',
     '/success': 'success',
     '/login': 'login',
@@ -159,6 +161,7 @@ function App() {
     orders: '/orders',
     addresses: '/addresses',
     profile: '/profile',
+    admin: '/admin',
     checkout: '/checkout',
     success: '/success',
     login: '/login',
@@ -170,6 +173,7 @@ function App() {
   };
 
   const currentPage = pageByPath[location.pathname] || 'products';
+  const isAdminUser = user?.role === 'ADMIN';
 
   // Load token from sessionStorage on mount (per tab)
   useEffect(() => {
@@ -238,10 +242,11 @@ function App() {
 
     await loadServerCart();
 
-    let redirectPath = '/products';
+    let redirectPath = userData?.role === 'ADMIN' ? '/admin' : '/products';
     try {
       const storedRedirect = sessionStorage.getItem(POST_LOGIN_REDIRECT_KEY);
-      if (storedRedirect && ALLOWED_POST_LOGIN_REDIRECTS.has(storedRedirect)) {
+      const canUseAdminRedirect = storedRedirect !== '/admin' || userData?.role === 'ADMIN';
+      if (storedRedirect && ALLOWED_POST_LOGIN_REDIRECTS.has(storedRedirect) && canUseAdminRedirect) {
         redirectPath = storedRedirect;
       }
       sessionStorage.removeItem(POST_LOGIN_REDIRECT_KEY);
@@ -436,6 +441,8 @@ function App() {
 
   const cartCount = (cart?.items || []).reduce((sum, item) => sum + (item.quantity || 0), 0);
   const isLoginRoute = location.pathname === '/login';
+  const isAdminRoute = location.pathname === '/admin';
+  const hideStoreShell = isLoginRoute || isAdminRoute;
 
   const protectedElement = (element, redirectPath = location.pathname) => {
     if (!isAuthHydrated) {
@@ -457,9 +464,33 @@ function App() {
     return <Navigate to="/login" replace />;
   };
 
+  const protectedAdminElement = (element) => {
+    if (!isAuthHydrated) {
+      return <Spinner text="Carregando sessão..." />;
+    }
+
+    if (!token) {
+      if (location.pathname === '/admin') {
+        try {
+          sessionStorage.setItem(POST_LOGIN_REDIRECT_KEY, '/admin');
+          sessionStorage.setItem('login_notice', 'Faça login com uma conta administradora para acessar o painel.');
+        } catch {
+          // noop
+        }
+      }
+      return <Navigate to="/login" replace />;
+    }
+
+    if (!isAdminUser) {
+      return <Navigate to="/products" replace />;
+    }
+
+    return element;
+  };
+
   return (
     <div className="app">
-      {!isLoginRoute && (
+      {!hideStoreShell && (
         <Navbar
           user={user}
           onLogout={handleLogout}
@@ -488,6 +519,27 @@ function App() {
               handleProtectedNavigate('/profile', 'Faça login para acessar seu perfil.');
               return;
             }
+            if (page === 'admin') {
+              if (token && isAdminUser) {
+                navigate('/admin');
+                return;
+              }
+
+              if (!token) {
+                try {
+                  sessionStorage.setItem(POST_LOGIN_REDIRECT_KEY, '/admin');
+                  sessionStorage.setItem('login_notice', 'Faça login com uma conta administradora para acessar o painel.');
+                } catch {
+                  // noop
+                }
+                navigate('/login');
+                return;
+              }
+
+              setAppError('Acesso restrito a administradores.');
+              navigate('/products');
+              return;
+            }
             if (page === 'login') {
               clearPostLoginRedirect();
               navigate('/login');
@@ -499,7 +551,7 @@ function App() {
         />
       )}
 
-      {appError && (
+      {appError && !isAdminRoute && (
         <div style={{ paddingTop: '80px', padding: '1rem 2rem' }}>
           <Alert type="error" message={appError} />
         </div>
@@ -509,7 +561,13 @@ function App() {
         <Route path="/" element={<Navigate to="/products" replace />} />
         <Route
           path="/login"
-          element={token ? <Navigate to="/products" replace /> : <LoginPage onLoginSuccess={handleLoginSuccess} />}
+          element={
+            !isAuthHydrated
+              ? <Spinner text="Carregando sessão..." />
+              : token
+                ? <Navigate to={isAdminUser ? '/admin' : '/products'} replace />
+                : <LoginPage onLoginSuccess={handleLoginSuccess} />
+          }
         />
         <Route path="/products" element={<ProductsPage onAddToCart={handleAddToCart} />} />
         <Route path="/products/:id" element={<ProductDetailPage onAddToCart={handleAddToCart} />} />
@@ -521,6 +579,10 @@ function App() {
         <Route
           path="/profile"
           element={protectedElement(<ProfilePage user={user} onUserUpdated={handleUserUpdated} />, '/profile')}
+        />
+        <Route
+          path="/admin"
+          element={protectedAdminElement(<AdminPanelPage user={user} onLogout={handleLogout} onGoStore={() => navigate('/products')} />)}
         />
         <Route path="/institucional" element={<InstitutionalHub />} />
         <Route path="/sobre" element={<AboutPage />} />
@@ -548,9 +610,9 @@ function App() {
         <Route path="*" element={<Navigate to="/products" replace />} />
       </Routes>
 
-      {!isLoginRoute && <Footer />}
+      {!hideStoreShell && <Footer />}
 
-      {!isLoginRoute && isCartOpen && (
+      {!hideStoreShell && isCartOpen && (
         <CartDrawer
           cart={cart}
           onClose={() => setIsCartOpen(false)}
