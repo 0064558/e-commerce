@@ -172,33 +172,9 @@ class APIService {
     return this.get(`/products/${id}`);
   }
 
-  createProduct(product) {
-    return this.post('/products', product);
-  }
-
-  updateProduct(id, product) {
-    return this.put(`/products/${id}`, product);
-  }
-
-  deleteProduct(id) {
-    return this.delete(`/products/${id}`);
-  }
-
   // Categories endpoints
   getCategories() {
     return this.get('/categories');
-  }
-
-  createCategory(category) {
-    return this.post('/categories', category);
-  }
-
-  updateCategory(id, category) {
-    return this.put(`/categories/${id}`, category);
-  }
-
-  deleteCategory(id) {
-    return this.delete(`/categories/${id}`);
   }
 
   // Cart endpoints
@@ -307,31 +283,6 @@ class APIService {
 
   getOrder(id) {
     return this.get(`/orders/${id}`);
-  }
-
-  updateOrder(id, order) {
-    return this.put(`/orders/${id}`, order);
-  }
-
-  deleteOrder(id) {
-    return this.delete(`/orders/${id}`);
-  }
-
-  // Admin users endpoints
-  getUsers() {
-    return this.get('/users');
-  }
-
-  getUserById(id) {
-    return this.get(`/users/${id}`);
-  }
-
-  createUser(user) {
-    return this.post('/auth/register', user);
-  }
-
-  deleteUser(id) {
-    return this.delete(`/users/${id}`);
   }
 
   // Users endpoints
